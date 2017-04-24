@@ -12,9 +12,9 @@ using std::cout;
 using std::cerr;
 using std::endl;
 using std::string;
-using std::mt19937;
 
 class GeneticCode{
+	string aa_str="*ACDEFGHIKLMNPQRSTVWY";
 	int codonToAa[64]={};
 	int codonCount[64]={};
 	double codonFreq[64]={};
@@ -108,7 +108,6 @@ char aa_decode(int aaId){/*{{{*/
 
 public:
 	string geneticCode_str;
-	string aa_str="*ACDEFGHIKLMNPQRSTVWY";
 
 	GeneticCode(string str){/*{{{*/
 		if(str.length()!=64){
@@ -143,35 +142,76 @@ public:
 
 	~GeneticCode(){}
 
-	void clear_count(){
+	void clear_count(){/*{{{*/
 		for(int i; i<64;i++){
 			codonCount[i]=0;
 			codonFreq[i]=0;
 		}	
-	}
+	}/*}}}*/
 
+	//get sequence(multiple of 3) and update codonCount
 	void update_count(seqan::Dna5String seq){
 		assert(seqan::length(seq)%3==0);
-		int loopCount = seqan::length(seq) / 3;
-		for (int i = 0; i < loopCount; i++){
+		int aaLength = seqan::length(seq) / 3;
+		for (int i = 0; i < aaLength; i++){
 			seqan::Dna5String codon=seqan::infix(seq, 3*i, 3*(i+1));
 			int codonId = codon_encode(codon);
 			codonCount[codonId]++;
 		}
 	}
 
+	//calculate codonFreq from codonCount
 	void calc_freq(){
+		for(int aaId=0;aaId<21;aaId++){
+			//calculate count sum
+			int countSum=0;
+			for(int i=aaIndex[aaId];i<aaIndex[aaId+1];i++){
+				countSum+=codonCount[aaToCodon[i]];
+			}
+			//calculate frequency
+			for(int i=aaIndex[aaId];i<aaIndex[aaId+1];i++){
+				int codonId=aaToCodon[i];
+				if(countSum==0){//to avoid division by 0
+					codonFreq[codonId]=0;
+				}else{
+					codonFreq[codonId]=codonCount[codonId]/countSum;
+				}
+			}
+		}
 	}
 
-	seqan::Dna5String synonymous_sub(seqan::Dna5String codon, mt19937 &mt){
-		seqan::Dna5String retVal="ATG";
-		return retVal;
+	//return randomly synonymous substituted codon, according to codon usage.
+	seqan::Dna5String synonymous_sub(seqan::Dna5String codon, std::mt19937 &mt){
+		int codonIdOld=codon_encode(codon);
+		int aaId=codonToAa[codonIdOld];
+
+		std::uniform_real_distribution<double> dist(0.0,1.0);
+		double d=dist(mt);
+		double cumSum=0;
+		//calc codonIdNew
+		int codonIdNew=-1;
+		for(int i=aaIndex[aaId];i<aaIndex[aaId+1];i++){
+			int codonId=aaToCodon[i];
+			cumSum+=codonFreq[codonId];
+			if(cumSum>d){
+				codonIdNew=codonId;
+			}
+		}
+		assert(codonIdNew!=-1);
+		return codon_decode(codonIdNew);
 	}
+
 	seqan::String<seqan::AminoAcid> translate(seqan::Dna5String seq){
-		seqan::String<seqan::AminoAcid> retVal="*";
-		return retVal;
+		assert(seqan::length(seq)%3==0);
+		int aaLength=seqan::length(seq)/3;
+		seqan::String<seqan::AminoAcid> seq_aa;
+		seqan::resize(seq_aa, aaLength);
+		for(int i=0;i<aaLength;i++){
+			seqan::Dna5String codon=seqan::infix(seq, 3*i, 3*(i+1));
+			seq_aa[i]=aa_decode(codonToAa[codon_encode(codon)]);	
+		}
+		return seq_aa;
 	}
-
 
 	void __debug(){
 		cout<<"genetic code: "<<geneticCode_str<<endl;
