@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <cassert>
+#include <random>
 
 #include <seqan/sequence.h>
 #include <seqan/seq_io.h>
@@ -11,6 +12,7 @@ using std::cout;
 using std::cerr;
 using std::endl;
 using std::string;
+using std::mt19937;
 
 class GeneticCode{
 	int codonToAa[64]={};
@@ -27,8 +29,10 @@ int codon_encode(seqan::Dna5String codon){/*{{{*/
 
 	int codonId=0;
 	int base=1;
+
 	for (int i = 0; i < 3; i++){
-		switch (codon[2-i]){
+		char c=codon[2-i];
+		switch (c){
 		case 'T':
 			codonId += 0 * base;
 			break;
@@ -47,6 +51,8 @@ int codon_encode(seqan::Dna5String codon){/*{{{*/
 		}
 		base*=4;
 	}
+
+
 	return codonId;
 }/*}}}*/
 
@@ -169,21 +175,21 @@ public:
 
 	void __debug(){
 		cout<<"genetic code: "<<geneticCode_str<<endl;
-		cout<<"aa: ";
-		for(int i=0;i<21;i++){
-			cout<<i<<"-"<<aa_str[i]<<", ";
-		}
-		cout<<endl;
+		cout<<"aa: "<<aa_str<<endl;
+		
+		//output codon:aa pair
 		for(int i=0;i<64;i++){
-			cout<<codonToAa[i]<<", "; 
+			cout<<codon_decode(i)<<"-"<<aa_decode(codonToAa[i])<<", ";
 		}
 		cout<<endl;
-		for(int i=0;i<64;i++){
-			cout<<aaToCodon[i]<<", ";
-		}
-		cout<<endl;
+
+		//output aa:codonLst pair
 		for(int i=0;i<21;i++){
-			cout<<aaIndex[i]<<", ";
+			cout<<aa_decode(i)<<"-[";
+			for(int j=aaIndex[i];j<aaIndex[i+1];j++){
+				cout<<codon_decode(aaToCodon[j])<<",";
+			}
+			cout<<"], ";
 		}
 		cout<<endl;
 	}
