@@ -16,6 +16,6 @@
 !*makefile
 !*.ipynb
 !*.md
-!*.txt
+!*.csv
 
 .ipynb_checkpoints
