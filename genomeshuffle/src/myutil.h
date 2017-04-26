@@ -17,7 +17,8 @@ vector<string> split(string const &str, char sep)
 }
 
 //check if the designated element is in the vector
-template <class Content> bool is_in(Content c, vector<Content> &v){
+template <class Content> 
+bool is_in(Content c, vector<Content> &v){
 	for (int i = 0; i < v.size(); i++){
 		if (c == v[i]){
 			return true;
