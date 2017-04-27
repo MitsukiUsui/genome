@@ -1,96 +1,118 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
+#include <cassert>
+
 #include <seqan/seq_io.h>
 
 using std::cout;
 using std::cerr;
 using std::endl;
 
-
-int main(int argc, char** argv){
-//  seqan::String<char> seqFilepath="test.fasta";
-//	seqan::String<char> chrFilepath="test_chr.fasta";
-//  seqan::String<char> plsFilepath="test_pls.fasta";
-    std::string basename=argv[1];
-    seqan::String<char> seqFilepath=argv[2];
-	seqan::String<char> chrFilepath=argv[3];
-    seqan::String<char> plsFilepath=argv[4];
-    std::string logFilepath=argv[5];
-    
-    //read input file
-    seqan::StringSet<seqan::CharString > ids;
-    seqan::StringSet< seqan::String<char> > seqs;
+template <typename TSeqs>
+void read_fasta(seqan::StringSet<seqan::CharString> & ids, TSeqs & seqs, seqan::CharString const & seqFilepath){
 	seqan::SeqFileIn seqFileIn;
-    if(!open(seqFileIn, seqan::toCString(seqFilepath))){
+    if(!seqan::open(seqFileIn, seqan::toCString(seqFilepath))){
 		cerr<<"ERROR: Could not open "<<seqFilepath<<endl;
-		return 1;
+		std::exit(1);
 	}
 	try{
 		seqan::readRecords(ids,seqs,seqFileIn);
 	}
 	catch (seqan::Exception const & e){
 		cout<<"ERROR: "<<e.what()<<endl;
-		return 1;
+		std::exit(2);
 	}
-    cout<<"\tDONE reading "<<seqan::length(ids)<<" seqs from"<<seqFilepath<<endl;
+    return;
+}
 
-
-    //open output file
-    seqan::SeqFileOut chrFileOut;
-    if(!open(chrFileOut, seqan::toCString(chrFilepath))){
-		cerr<<"ERROR: Could not open "<<chrFilepath<<endl;;
-		return 1;
-	}
-    seqan::SeqFileOut plsFileOut;
-    if(!open(plsFileOut, seqan::toCString(plsFilepath))){
-		cerr<<"ERROR: Could not open "<<plsFilepath<<endl;
-		return 1;
-	}
-
-    //output
-    int chrCount=0;
-    int plsCount=0;
-    std::stringstream chrSs;
-    std::stringstream plsSs;
-
-    for(unsigned i=0;i<length(ids);i++){
+//0...chromosome, 1...plasmid
+void judge_type(std::vector<int> & labels, seqan::StringSet<seqan::CharString> const & ids){
+    for(unsigned i=0;i<seqan::length(ids);i++){
         std::string id_str=seqan::toCString(ids[i]);
         std::string::size_type index=id_str.find("plasmid");
-
         if(index==std::string::npos){
-		    seqan::writeRecord(chrFileOut,ids[i],seqs[i]);
-            chrCount++;
-            chrSs<<seqan::length(seqs[i])<<":";
+            labels.push_back(0);
         }
         else{
-		    seqan::writeRecord(plsFileOut,ids[i],seqs[i]);
-            plsCount++;
-            plsSs<<seqan::length(seqs[i])<<":";
+            labels.push_back(1);
         }
     }
-    cout<<"\tDONE outputing "<<chrCount<<" seqs to "<<chrFilepath<<endl;
-    cout<<"\tDONE outputing "<<plsCount<<" seqs to "<<plsFilepath<<endl;
+    return;
+}
 
-    //delete last ':'
-    std::string chrLength=chrSs.str();
-    std::string plsLength=plsSs.str();
-    if(chrCount>0){
-        chrLength.pop_back();
-    }
-    if(plsCount>0){
-        plsLength.pop_back();
-    }
 
-    //write log function
-    std::ofstream ofs(logFilepath);
+template<typename TSeqs>
+void split_fasta(seqan::StringSet<seqan::CharString> const & outFilepaths, seqan::StringSet<seqan::CharString> const & ids, TSeqs const & seqs, std::vector<int> const & labels){
+	assert(seqan::length(outFilepaths)==2);
+	for(unsigned label=0;label<2;label++){
+		seqan::SeqFileOut seqFileout;	
+		if(!seqan::open(seqFileout, seqan::toCString(outFilepaths[label]))){
+			cerr<<"ERROR: Could not open "<<outFilepaths[label]<<endl;;
+			std::exit(1);
+		}
+		for(unsigned i=0;i<seqan::length(ids);i++){
+			if(labels[i]==label){
+				seqan::writeRecord(seqFileout,ids[i],seqs[i]);
+			}
+		}
+	}
+}
+
+
+int main(int argc, char** argv){
+    std::string basename=argv[1];
+    seqan::CharString seqFilepath=argv[2];
+	seqan::StringSet<seqan::CharString> outFilepaths;
+	seqan::appendValue(outFilepaths, argv[3]);
+	seqan::appendValue(outFilepaths, argv[4]);
+    std::string logFilepath=argv[5];
+    
+    //read input file
+    seqan::StringSet<seqan::CharString> ids;
+    seqan::StringSet<seqan::CharString> seqs;
+    read_fasta(ids,seqs,seqFilepath);
+    cout<<"\tDONE reading "<<seqan::length(ids)<<" seqs from "<<seqFilepath<<endl;
+
+	//classify chromosome and plasmid
+	std::vector<std::string> legends;
+	legends={"chromosome", "plasmid"};
+	std::vector<int> labels;
+    judge_type(labels,ids);
+
+	int labelCounts[2]={};
+	for(unsigned i=0;i<seqan::length(labels);i++){
+		labelCounts[labels[i]]++;
+	}
+
+	//write fasta
+	split_fasta(outFilepaths, ids, seqs, labels);
+    for(unsigned label=0;label<2;label++){
+		cout<<"\tDONE writing "<<labelCounts[label]<<" seqs to   "<<outFilepaths[label]<<endl;
+	}
+	
+	//output log
+	std::ofstream ofs(logFilepath);
     if (!ofs){
 		cerr<<"ERROR: Could not open "<<logFilepath<<endl;;
 		return 1;
     }
-    ofs<<basename<<","<<"chromosome"<<","<<chrFilepath<<","<<chrCount<<","<<chrLength<<endl;
-    ofs<<basename<<","<<"plasmid"<<","<<plsFilepath<<","<<plsCount<<","<<plsLength<<endl;
-    cout<<"\tDONE outputing log to "<<logFilepath<<endl;
+	for(unsigned label=0;label<2;label++){
+		std::stringstream ss;
+		for(unsigned i=0;i<seqan::length(ids);i++){
+			if(labels[i]==label){
+				ss<<seqan::length(seqs[i])<<":";
+			}
+		}
 
-    return 0;
+    	std::string length=ss.str();
+		if(labelCounts[label]>0){
+			length.pop_back();
+		}
+    	ofs<<basename<<","<<legends[label]<<","<<outFilepaths[label]<<","<<labelCounts[label]<<","<<length<<endl;
+	} 
+
+	cout<<"\tDONE writing log to "<<logFilepath<<endl;
+	return 0;
 }
