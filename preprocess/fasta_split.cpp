@@ -5,6 +5,8 @@
 #include <cassert>
 
 #include <seqan/seq_io.h>
+#include <seqan/modifier.h>
+#include <seqan/stream.h>
 
 using std::cout;
 using std::cerr;
@@ -43,8 +45,32 @@ void judge_type(std::vector<int> & labels, seqan::StringSet<seqan::CharString> c
 }
 
 
-template<typename TSeqs>
-void split_fasta(seqan::StringSet<seqan::CharString> const & outFilepaths, seqan::StringSet<seqan::CharString> const & ids, TSeqs const & seqs, std::vector<int> const & labels){
+struct MyFunctor:
+    public std::unary_function<char, char>
+{
+    inline char operator()(char x) const
+    {
+        char r;
+        if(('a'<=x) && (x <= 'z')){
+            r = x + ('A'-'a');
+        }else{
+            r = x;
+        }
+
+        switch(r){
+            case 'A':
+            case 'C':
+            case 'G':
+            case 'T':
+                return r;
+            default:
+                return 'N';
+        }
+    }
+};
+
+
+void split_fasta(seqan::StringSet<seqan::CharString> const & outFilepaths, seqan::StringSet<seqan::CharString> const & ids, seqan::StringSet<seqan::CharString> & seqs, std::vector<int> const & labels, bool doModification){
 	assert(seqan::length(outFilepaths)==2);
 	for(unsigned label=0;label<2;label++){
 		seqan::SeqFileOut seqFileout;	
@@ -54,7 +80,13 @@ void split_fasta(seqan::StringSet<seqan::CharString> const & outFilepaths, seqan
 		}
 		for(unsigned i=0;i<seqan::length(ids);i++){
 			if(labels[i]==label){
-				seqan::writeRecord(seqFileout,ids[i],seqs[i]);
+				if(doModification){
+					seqan::ModifiedString< seqan::CharString, seqan::ModView<MyFunctor> > seqMod(seqs[i]);
+					seqan::writeRecord(seqFileout,ids[i],seqMod);
+				}
+				else{
+					seqan::writeRecord(seqFileout,ids[i],seqs[i]);
+				}
 			}
 		}
 	}
@@ -62,13 +94,19 @@ void split_fasta(seqan::StringSet<seqan::CharString> const & outFilepaths, seqan
 
 
 int main(int argc, char** argv){
-    std::string basename=argv[1];
+	std::string basename=argv[1];
     seqan::CharString seqFilepath=argv[2];
 	seqan::StringSet<seqan::CharString> outFilepaths;
 	seqan::appendValue(outFilepaths, argv[3]);
 	seqan::appendValue(outFilepaths, argv[4]);
     std::string logFilepath=argv[5];
-    
+	std::string tmp=argv[6];
+	bool doModification=false;
+	if(tmp=="1"){
+		doModification=true;
+		cout<<"\tWITH modification"<<endl;
+	}
+
     //read input file
     seqan::StringSet<seqan::CharString> ids;
     seqan::StringSet<seqan::CharString> seqs;
@@ -87,7 +125,7 @@ int main(int argc, char** argv){
 	}
 
 	//write fasta
-	split_fasta(outFilepaths, ids, seqs, labels);
+	split_fasta(outFilepaths, ids, seqs, labels, doModification);
     for(unsigned label=0;label<2;label++){
 		cout<<"\tDONE writing "<<labelCounts[label]<<" seqs to   "<<outFilepaths[label]<<endl;
 	}
