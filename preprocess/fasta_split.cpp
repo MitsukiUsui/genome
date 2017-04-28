@@ -4,85 +4,52 @@
 #include <vector>
 #include <cassert>
 
+#include <seqan/basic.h>
 #include <seqan/seq_io.h>
 #include <seqan/modifier.h>
 #include <seqan/stream.h>
+
+#include "myutil.h"
 
 using std::cout;
 using std::cerr;
 using std::endl;
 
-template <typename TSeqs>
-void read_fasta(seqan::StringSet<seqan::CharString> & ids, TSeqs & seqs, seqan::CharString const & seqFilepath){
-	seqan::SeqFileIn seqFileIn;
-    if(!seqan::open(seqFileIn, seqan::toCString(seqFilepath))){
-		cerr<<"ERROR: Could not open "<<seqFilepath<<endl;
-		std::exit(1);
-	}
-	try{
-		seqan::readRecords(ids,seqs,seqFileIn);
-	}
-	catch (seqan::Exception const & e){
-		cout<<"ERROR: "<<e.what()<<endl;
-		std::exit(2);
-	}
-    return;
-}
-
 //0...chromosome, 1...plasmid
 void judge_type(std::vector<int> & labels, seqan::StringSet<seqan::CharString> const & ids){
-    for(unsigned i=0;i<seqan::length(ids);i++){
+    labels.resize(seqan::length(ids));
+	for(unsigned i=0;i<seqan::length(ids);i++){
         std::string id_str=seqan::toCString(ids[i]);
         std::string::size_type index=id_str.find("plasmid");
         if(index==std::string::npos){
-            labels.push_back(0);
+            labels[i]=0;
         }
         else{
-            labels.push_back(1);
+			labels[i]=1;
         }
     }
     return;
 }
 
 
-struct MyFunctor:
-    public std::unary_function<char, char>
-{
-    inline char operator()(char x) const
-    {
-        char r;
-        if(('a'<=x) && (x <= 'z')){
-            r = x + ('A'-'a');
-        }else{
-            r = x;
-        }
 
-        switch(r){
-            case 'A':
-            case 'C':
-            case 'G':
-            case 'T':
-                return r;
-            default:
-                return 'N';
-        }
-    }
-};
-
-
-void split_fasta(seqan::StringSet<seqan::CharString> const & outFilepaths, seqan::StringSet<seqan::CharString> const & ids, seqan::StringSet<seqan::CharString> & seqs, std::vector<int> const & labels, bool doModification){
+//do not use template because seqs are required to be able to be converted into Dna5String
+void split_fasta(seqan::StringSet<seqan::CharString> const & outFilepaths, seqan::StringSet<seqan::CharString> const & ids, seqan::StringSet<seqan::IupacString> & seqs, std::vector<int> const & labels, bool doModification){
 	assert(seqan::length(outFilepaths)==2);
+
 	for(unsigned label=0;label<2;label++){
+		//open file
 		seqan::SeqFileOut seqFileout;	
 		if(!seqan::open(seqFileout, seqan::toCString(outFilepaths[label]))){
 			cerr<<"ERROR: Could not open "<<outFilepaths[label]<<endl;;
 			std::exit(1);
 		}
+		//output according to labels & doModification flag
 		for(unsigned i=0;i<seqan::length(ids);i++){
 			if(labels[i]==label){
 				if(doModification){
-					seqan::ModifiedString< seqan::CharString, seqan::ModView<MyFunctor> > seqMod(seqs[i]);
-					seqan::writeRecord(seqFileout,ids[i],seqMod);
+					seqan::Dna5String mod=seqs[i];
+					seqan::writeRecord(seqFileout,ids[i],mod);
 				}
 				else{
 					seqan::writeRecord(seqFileout,ids[i],seqs[i]);
@@ -100,16 +67,19 @@ int main(int argc, char** argv){
 	seqan::appendValue(outFilepaths, argv[3]);
 	seqan::appendValue(outFilepaths, argv[4]);
     std::string logFilepath=argv[5];
-	std::string tmp=argv[6];
 	bool doModification=false;
-	if(tmp=="1"){
-		doModification=true;
-		cout<<"\tWITH modification"<<endl;
+	
+	if(argc==7){
+		std::string tmp=argv[6];
+		if(tmp=="1"){
+			doModification=true;
+			cout<<"\tWITH modification"<<endl;
+		}
 	}
 
     //read input file
     seqan::StringSet<seqan::CharString> ids;
-    seqan::StringSet<seqan::CharString> seqs;
+    seqan::StringSet<seqan::IupacString> seqs;
     read_fasta(ids,seqs,seqFilepath);
     cout<<"\tDONE reading "<<seqan::length(ids)<<" seqs from "<<seqFilepath<<endl;
 
@@ -137,20 +107,19 @@ int main(int argc, char** argv){
 		return 1;
     }
 	for(unsigned label=0;label<2;label++){
-		std::stringstream ss;
+		std::stringstream ss;//aggregate length of sequences
 		for(unsigned i=0;i<seqan::length(ids);i++){
 			if(labels[i]==label){
 				ss<<seqan::length(seqs[i])<<":";
 			}
 		}
-
     	std::string length=ss.str();
-		if(labelCounts[label]>0){
+		if(labelCounts[label]>0){//drop last ':'
 			length.pop_back();
 		}
     	ofs<<basename<<","<<legends[label]<<","<<outFilepaths[label]<<","<<labelCounts[label]<<","<<length<<endl;
 	} 
-
 	cout<<"\tDONE writing log to "<<logFilepath<<endl;
+	
 	return 0;
 }
