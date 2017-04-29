@@ -12,5 +12,6 @@ do
     plsFilepath=${outdir}fasta/${basename}_plasmid.fna
     logFilepath=${outdir}preprocess/split/${basename}_split.log
     echo ${basename}
-    ./fasta_split ${basename} ${seqFilepath} ${chrFilepath} ${plsFilepath} ${logFilepath}
+    ./fasta_split ${basename} ${seqFilepath} ${chrFilepath} ${plsFilepath} ${logFilepath} 1
+#	echo "./fasta_split ${basename} ${seqFilepath} ${chrFilepath} ${plsFilepath} ${logFilepath}"
 done
