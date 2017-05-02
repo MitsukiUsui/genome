@@ -52,7 +52,7 @@ public:
 	                                                                       //***does not support ambiguous base for now
 	template <typename TSeq> bool is_stop_codon(TSeq codon) const;
 	void __show() const;
-	void __show_freq(bool isFreq=true);	//true...freq, false...count;
+	void __show_freq(bool isFreq=true) const;//true...freq, false...count;
 };
 
 
@@ -295,7 +295,7 @@ void GeneticCode::__show() const{/*{{{*/
 	std::cout<<std::endl;
 }/*}}}*/
 
-void GeneticCode::__show_freq(bool isFreq = true) const{/*{{{*/
+void GeneticCode::__show_freq(bool isFreq) const{/*{{{*/
 	for (int aaId = 0; aaId < 21; aaId++){
 		std::cout << aa_decode(aaId) << "\t";
 	

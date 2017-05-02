@@ -49,7 +49,7 @@ class CDSs{
 	template<typename TSeq>
 	int judge_type(TSeq & seq, 
 				   GeneticCode const & gc);
-	void set_types(seqan::String Set<seqan::Dna5String> & seqs, 
+	void set_types(seqan::StringSet<seqan::Dna5String> & seqs, 
 	               GeneticCode const & gc);//***need to use template
 
 public:
