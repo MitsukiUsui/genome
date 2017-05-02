@@ -11,8 +11,8 @@
 #include <seqan/seq_io.h>
 #include <seqan/gff_io.h>
 #include <seqan/stream.h>
-#include <seqan/translation.h>
 
+#include "geneticcode.h"
 
 struct CDS{
 	int startPos;
@@ -40,6 +40,34 @@ struct CDS{
 };
 
 
+//============================================================
+//Class to organize set of CDS as vector of vector of CDS(cdss_vec)
+//Each vector has set of CDS from the same reference id.
+//Last Element of each vector are sentinal, in order to possess reference length.
+//============================================================
+class CDSs{
+	template<typename TSeq>
+	int judge_type(TSeq & seq, 
+				   GeneticCode const & gc);
+	void set_types(seqan::String Set<seqan::Dna5String> & seqs, 
+	               GeneticCode const & gc);//***need to use template
+
+public:
+	std::vector< std::vector<CDS> > cdss_vec;
+
+	CDSs(seqan::String<seqan::GffRecord> const & records, 
+	     seqan::StringSet<seqan::CharString> const & ids, 
+		 seqan::StringSet<seqan::Dna5String> & seqs, //seqs need not to be const, because of infix
+		 GeneticCode const & gc);
+	~CDSs();
+	void __show();
+};
+
+
+//============================================================
+//implementation of CDS
+//============================================================
+
 CDS::CDS(seqan::GffRecord const & record){/*{{{*/
 	startPos=record.beginPos;
 	endPos=record.endPos;
@@ -63,25 +91,9 @@ CDS::CDS(int pos){/*{{{*/
 CDS::~CDS(){}
 
 
-
-class CDSs{
-	template<typename TSeq>
-	int judge_type(TSeq & seq, 
-				   GeneticCode const & gc);
-	void set_types(seqan::String Set<seqan::Dna5String> & seqs, 
-	               GeneticCode const & gc);//***need to use template
-
-public:
-	std::vector< std::vector<CDS> > cdss_vec;
-
-	CDSs(seqan::String<seqan::GffRecord> const & records, 
-	     seqan::StringSet<seqan::CharString> const & ids, 
-		 seqan::StringSet<seqan::Dna5String> & seqs, //seqs need not to be const, because of infix
-		 GeneticCode const & gc);
-	~CDSs();
-	void __show();
-};
-
+//============================================================
+//implementation of CDSs
+//============================================================
 
 template <typename TSeq>//seqan::String or segment
 int CDSs::judge_type(TSeq & seq, GeneticCode const & gc){/*{{{*/
@@ -111,7 +123,6 @@ int CDSs::judge_type(TSeq & seq, GeneticCode const & gc){/*{{{*/
 	return 0;
 }/*}}}*/
 
-
 void CDSs::set_types(seqan::StringSet<seqan::Dna5String> & seqs, GeneticCode const & gc){/*{{{*/
 	for(int refIdx=0;refIdx<cdss_vec.size();refIdx++){
 		for(auto itr=cdss_vec[refIdx].begin();itr!=cdss_vec[refIdx].end();itr++){
@@ -128,7 +139,6 @@ void CDSs::set_types(seqan::StringSet<seqan::Dna5String> & seqs, GeneticCode con
 	}
 	
 }/*}}}*/
-
 
 CDSs::CDSs(seqan::String<seqan::GffRecord> const & records, seqan::StringSet<seqan::CharString> const & ids, seqan::StringSet<seqan::Dna5String> & seqs, GeneticCode const & gc){/*{{{*/
 	cdss_vec.resize(seqan::length(ids));
@@ -162,10 +172,9 @@ CDSs::CDSs(seqan::String<seqan::GffRecord> const & records, seqan::StringSet<seq
 
 }/*}}}*/
 
-	~CDSs(){}
+CDSs::~CDSs(){}
 	
-
-void __show(){/*{{{*/
+void CDSs::__show(){/*{{{*/
 	for(int refIdx=0;refIdx<cdss_vec.size();refIdx++){
 		//two counter	
 		std::vector<int> strandCount(3,0);//backward, forward, sentinal

@@ -37,7 +37,7 @@ public:
 	~GeneticCode();
 	void clear_count();
 	//------------------------------------------------------------
-	//get sequence(multiple of 3) and update codonCount
+	//update codonCount according to seq(length multiple of 3)
 	//------------------------------------------------------------
 	template <typename TSeq> void update_count(TSeq & seq); 
 	//------------------------------------------------------------
@@ -45,7 +45,7 @@ public:
 	//------------------------------------------------------------
 	void calc_freq();
 	//------------------------------------------------------------
-	//randome inplace synonymous substitution, according to codonFreq.
+	//random inplace synonymous substitution, according to codonFreq.
 	//------------------------------------------------------------
 	template <typename TSeq> void synonymous_sub(TSeq codon, std::mt19937 &mt) const;
 	seqan::String<seqan::AminoAcid> translate(seqan::Dna5String seq) const;//***need to apply template,
