@@ -5,8 +5,7 @@
 !*/
 
 # ignore certain directory
-#/tmp/
-/genomeshuffle/build/
+#/genomeshuffle/build/
 
 # And all the file types I'm interested in.
 !.gitignore
@@ -14,7 +13,6 @@
 !*.cpp
 !*.h
 !*.sh
-!*makefile
 !*.ipynb
 !*.md
 !*.csv
