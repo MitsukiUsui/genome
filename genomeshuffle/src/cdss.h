@@ -19,6 +19,7 @@ struct CDS{
 	int endPos;
 	bool isForward;
 	//------------------------------------------------------------
+	//-1...sentinel
 	//0...typical
 	//1...shorter than 6
 	//2...not multiple of 3
