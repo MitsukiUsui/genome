@@ -7,6 +7,7 @@
 
 #define SEQAN_ENABLE_DEBUG 1
 
+#include <seqan/arg_parse.h>
 #include "mygenome.h"
 #include "myutil.h"
 
@@ -143,8 +144,9 @@ void shuffle_genome(TSeqs & seqs, CDSs const  & cdss, GeneticCode & gc, int * sh
 	}
 }
 
-
-//update codon count according to CDSs
+//------------------------------------------------------------
+//update GeneticCode (codonCount) according to CDSs
+//------------------------------------------------------------
 void update_gc(GeneticCode & gc, seqan::StringSet<seqan::Dna5String> & seqs, CDSs const & cdss){/*{{{*/
 	for(int refIdx=0;refIdx<seqan::length(seqs);refIdx++){
 		for(int i=0;i<cdss.cdss_vec[refIdx].size()-1;i++){
@@ -170,53 +172,100 @@ void update_gc(GeneticCode & gc, seqan::StringSet<seqan::Dna5String> & seqs, CDS
 }/*}}}*/
 
 
-int main(int argc, char *argv[]){
-	//read fasta file
-	seqan::CharString seqFilepath="GCF_000022205.1_ASM2220v1_genomic.fna";
+//------------------------------------------------------------
+//parse arguments 
+//------------------------------------------------------------
+void set_parser(seqan::ArgumentParser & parser, int argc, char ** argv){/*{{{*/
+    seqan::addUsageLine(parser,
+        "\"seqFilepath\" \"gffFilepath\"");
+    seqan::addDescription(parser,
+        "This program . "
+        );
+    addArgument(parser, seqan::ArgParseArgument(
+        seqan::ArgParseArgument::INPUT_FILE, "seqFilepath"));
+    addArgument(parser, seqan::ArgParseArgument(
+        seqan::ArgParseArgument::INPUT_FILE, "gffFilepath"));
+    addArgument(parser, seqan::ArgParseArgument(
+        seqan::ArgParseArgument::INTEGER, "shuffleMode1"));
+    addArgument(parser, seqan::ArgParseArgument(
+        seqan::ArgParseArgument::INTEGER, "shuffleMode2"));
+    addOption(parser, seqan::ArgParseOption(
+        "d", "dryrun", "Do dryrun"));
+    
+	seqan::ArgumentParser::ParseResult res = seqan::parse(parser, argc, argv);
+    if (res != seqan::ArgumentParser::PARSE_OK){
+        std::exit(1);
+    }
+}/*}}}*/
+
+
+int main(int argc, char ** argv){
+	//------------------------------------------------------------
+	//parse arguments
+	//------------------------------------------------------------
+	seqan::ArgumentParser parser("shuffle_report");
+	set_parser(parser, argc, argv);
+	
+	seqan::CharString seqFilepath;
+	seqan::getArgumentValue(seqFilepath, parser, 0);
+	seqan::CharString gffFilepath;
+	seqan::getArgumentValue(gffFilepath, parser, 1);
+	int shuffleMode[2]={};
+	seqan::getArgumentValue(shuffleMode[0], parser, 2);
+	seqan::getArgumentValue(shuffleMode[1], parser, 3);
+	bool dryrun=seqan::isSet(parser, "dryrun");
+	//summarize 
+	cout<<endl<<"PROCESSING..."<<endl;
+	cout << "\tseqFilepath  : " << seqFilepath << endl;
+    cout << "\tgffFilepath  : " << gffFilepath << endl;
+    cout << "\tshuffle mode : " << shuffleMode[0] << ", " << shuffleMode[1] << endl;
+	if(dryrun){
+		cout<<"\texecution    : DRYRUN"<<endl;
+	}
+    cout << endl;
+	
+
+	//------------------------------------------------------------
+	//process fasta 
+	//------------------------------------------------------------
 	seqan::StringSet<seqan::CharString> ids;
 	seqan::StringSet<seqan::Dna5String> seqs;
 	read_fasta(ids, seqs, seqFilepath);
-	
 	//trim ids
 	for (unsigned i=0;i<length(ids);i++){
 		ids[i]=seqan::CharString(split(seqan::toCString(ids[i]),' ')[0]);
 	}
-
-	//read gff file
-	seqan::CharString gffFilepath="GCF_000022205.1_ASM2220v1_genomic.gff";
-	seqan::String<seqan::GffRecord> records;
-	read_gff(records,gffFilepath);
-
-	//initialize genetic code
-	std::string str="FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG";
-    GeneticCode gc(str);
-	
-	//create CDSs
-	CDSs cdss(records, ids, seqs, gc);
-
-	//update genetic code
-	update_gc(gc, seqs, cdss);
-
-	int shuffleMode[2]={1,3};
-    
-	//output property
-	cout << "seqFilepath : " << seqFilepath << endl;
-    cout << "gffFilepath : " << gffFilepath << endl;
-    cout << "shuffle mode : " << shuffleMode[0] << ", " << shuffleMode[1] << endl;
-    cout << endl;
+	//summarize 
+	cout<<"DONE reading "<<seqFilepath<<endl;
 	for(unsigned i=0;i<seqan::length(ids);i++){
-		cout<<ids[i]<<" : "<<seqan::length(seqs[i])<<endl;
+		cout<<"\t"<<ids[i]<<" : "<<seqan::length(seqs[i])<<endl;
 	}
 	cout<<endl;
 
-	cdss.__show();
+	//------------------------------------------------------------
+	//process gff and genetic code
+	//------------------------------------------------------------
+	std::string str="FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG";
+    GeneticCode gc(str);//genetic code needs to be initialized first, in order to judge cds types
+	seqan::String<seqan::GffRecord> records;
+	read_gff(records,gffFilepath);
+	CDSs cdss(records, ids, seqs, gc);
+	//summarize 
+	cout<<"DONE reading "<<gffFilepath<<endl;
+	for(unsigned i=0;i<seqan::length(ids);i++){
+		cout<<"\t"<<ids[i]<<" : "<<cdss.cdss_vec[i].size()<<endl;
+	}
 	cout<<endl;
+	update_gc(gc, seqs, cdss);//update genetic code
+
+	//cdss.__show();
+	//cout<<endl;
     //gc.__show();
 	//cout<<endl;
-	gc.__show_freq();
-	cout<<endl;
-	gc.__show_freq(false);
-	cout<<endl;
+	//gc.__show_freq();
+	//cout<<endl;
+	//gc.__show_freq(false);
+	//cout<<endl;
     
 	shuffle_genome(seqs, cdss, gc, shuffleMode);
 

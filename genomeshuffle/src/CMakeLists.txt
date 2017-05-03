@@ -2,7 +2,7 @@
 cmake_minimum_required (VERSION 3.0.0)
 
 # Name of project and that it is C++ only.
-project (genomeshuffle CXX)
+project (shuffle_report CXX)
 
 # ----------------------------------------------------------------------------
 # Dependencies
@@ -28,5 +28,5 @@ add_definitions (${SEQAN_DEFINITIONS})
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SEQAN_CXX_FLAGS}")
 
 # Add executable and link against SeqAn dependencies.
-add_executable (genomeshuffle shuffle_report.cpp)
-target_link_libraries (genomeshuffle ${SEQAN_LIBRARIES})
+add_executable (shuffle_report shuffle_report.cpp)
+target_link_libraries (shuffle_report ${SEQAN_LIBRARIES})
