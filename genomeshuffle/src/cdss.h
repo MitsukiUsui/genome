@@ -41,16 +41,17 @@ struct CDS{
 
 
 //============================================================
-//Class to organize set of CDS as vector of vector of CDS(cdss_vec)
-//Each vector has set of CDS from the same reference id.
+//Class to organize set of CDSs as vector of vector of CDS(cdss_vec)
+//Each vector has set of CDSs from the same reference id.
 //Last Element of each vector are sentinal, in order to possess reference length.
 //============================================================
 class CDSs{
 	template<typename TSeq>
 	int judge_type(TSeq & seq, 
 				   GeneticCode const & gc);
-	void set_types(seqan::StringSet<seqan::Dna5String> & seqs, 
-	               GeneticCode const & gc);//***need to use template
+	template<typename TSeqs>
+	void set_types(TSeqs & seqs, 
+	               GeneticCode const & gc);
 
 public:
 	std::vector< std::vector<CDS> > cdss_vec;
@@ -123,7 +124,8 @@ int CDSs::judge_type(TSeq & seq, GeneticCode const & gc){/*{{{*/
 	return 0;
 }/*}}}*/
 
-void CDSs::set_types(seqan::StringSet<seqan::Dna5String> & seqs, GeneticCode const & gc){/*{{{*/
+template <typename TSeqs>
+void CDSs::set_types(TSeqs & seqs, GeneticCode const & gc){/*{{{*/
 	for(int refIdx=0;refIdx<cdss_vec.size();refIdx++){
 		for(auto itr=cdss_vec[refIdx].begin();itr!=cdss_vec[refIdx].end();itr++){
 			if(itr->isForward){

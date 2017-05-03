@@ -13,6 +13,8 @@
 
 class GeneticCode{
 	std::string aa_str="*ACDEFGHIKLMNPQRSTVWY";//1 stop, 20 aa
+	seqan::StringSet<seqan::DnaString> codon_ss;//64 codon
+
 	int codonToAa[64]={};
 	int codonCount[64]={};
 	double codonFreq[64]={};
@@ -22,12 +24,13 @@ class GeneticCode{
 	//--------------------------------------------
 	//return 0~63 value, if N included, return -1.
 	//-------------------------------------------
-	template <typename TSeq> int codon_encode(TSeq const & codon) const;
+	template <typename TSeq> 
+	int              codon_encode(TSeq const & codon) const;
 	seqan::DnaString codon_decode(int codonId) const;//*** need to be fixed to just returning array value, without calculation
 	//---------------------------------
 	//return 0~21 value (1 stop, 20 aa)
 	//--------------------------------
-	int aa_encode(char aa) const;
+	int  aa_encode(char aa) const;
 	char aa_decode(int aaId) const;
 
 public:
@@ -39,7 +42,8 @@ public:
 	//------------------------------------------------------------
 	//update codonCount according to seq(length multiple of 3)
 	//------------------------------------------------------------
-	template <typename TSeq> void update_count(TSeq & seq); 
+	template <typename TSeq> 
+	void update_count(TSeq & seq); 
 	//------------------------------------------------------------
 	//update codonFreq accorging to codon count 
 	//------------------------------------------------------------
@@ -47,14 +51,15 @@ public:
 	//------------------------------------------------------------
 	//random inplace synonymous substitution, according to codonFreq.
 	//------------------------------------------------------------
-	template <typename TSeq> void synonymous_sub(TSeq codon, std::mt19937 &mt) const;
-	seqan::String<seqan::AminoAcid> translate(seqan::Dna5String seq) const;//***need to apply template,
-	                                                                       //***does not support ambiguous base for now
-	template <typename TSeq> bool is_stop_codon(TSeq codon) const;
+	template <typename TSeq> 
+	void synonymous_sub(TSeq codon, std::mt19937 &mt) const;
+	template <typename TSeq>
+	seqan::String<seqan::AminoAcid> translate(TSeq seq) const;//ISSUE does not support ambiguous base for now
+	template <typename TSeq>
+	bool is_stop_codon(TSeq codon) const;
 	void __show() const;
 	void __show_freq(bool isFreq=true) const;//true...freq, false...count;
 };
-
 
 
 //============================================================
@@ -62,7 +67,7 @@ public:
 //============================================================
 
 template <typename TSeq>
-int GeneticCode::codon_encode(TSeq const & codon) const{/*{{{*/
+inline int GeneticCode::codon_encode(TSeq const & codon) const{/*{{{*/
 	assert(seqan::length(codon)==3);
 	
 	int codonId=0;
@@ -94,37 +99,12 @@ int GeneticCode::codon_encode(TSeq const & codon) const{/*{{{*/
 	return codonId;
 }/*}}}*/
 
-seqan::DnaString GeneticCode::codon_decode(int codonId) const{/*{{{*/
+inline seqan::DnaString GeneticCode::codon_decode(int codonId) const{/*{{{*/
 	assert(codonId>=0 & codonId<64);
-
-	int codon_int[3];
-	seqan::DnaString codon;
-	seqan::resize(codon,3);
-
-	codon_int[0] = codonId / 16;
-	codon_int[1] = (codonId % 16) / 4;
-	codon_int[2] = (codonId % 16) % 4;
-
-	for (int i = 0; i < 3; i++){
-		switch (codon_int[i]){
-		case 0:
-			codon[i] = 'T';
-			break;
-		case 1:
-			codon[i] = 'C';
-			break;
-		case 2:
-			codon[i] = 'A';
-			break;
-		case 3:
-			codon[i] = 'G';
-			break;
-		}
-	}
-	return codon;
+	return codon_ss[codonId];
 }/*}}}*/
 
-int GeneticCode::aa_encode(char aa) const{/*{{{*/
+inline int GeneticCode::aa_encode(char aa) const{/*{{{*/
 	int aaId=-1;
 	for (int i=0;i<aa_str.length();i++){
 		if (aa==aa_str[i]){
@@ -139,7 +119,7 @@ int GeneticCode::aa_encode(char aa) const{/*{{{*/
 	return aaId;
 }/*}}}*/
 
-char GeneticCode::aa_decode(int aaId) const{/*{{{*/
+inline char GeneticCode::aa_decode(int aaId) const{/*{{{*/
 	assert(aaId>=0 & aaId<21);
 	return aa_str[aaId];
 }/*}}}*/
@@ -156,6 +136,43 @@ GeneticCode::GeneticCode(std::string str){/*{{{*/
 		exit(1);
 	}
 	geneticCode_str=str;
+
+	//initialize codon_ss
+	seqan::resize(codon_ss, 64);
+	for(int codonId=0;codonId<64;codonId++){
+		seqan::DnaString codon;
+		seqan::resize(codon,3);
+
+		int codon_int[3];
+		codon_int[0] = codonId / 16;
+		codon_int[1] = (codonId % 16) / 4;
+		codon_int[2] = (codonId % 16) % 4;
+
+		for (int i = 0; i < 3; i++){
+			switch (codon_int[i]){
+			case 0:
+				codon[i] = 'T';
+				break;
+			case 1:
+				codon[i] = 'C';
+				break;
+			case 2:
+				codon[i] = 'A';
+				break;
+			case 3:
+				codon[i] = 'G';
+				break;
+			}
+		}
+		codon_ss[codonId]=codon;
+	}
+
+	std::cout<<seqan::length(codon_ss)<<std::endl;
+	for(int i=0;i<64;i++){
+		std::cout<<seqan::length(codon_ss[i])<<std::endl;
+		std::cout<<codon_ss[i]<<std::endl;
+	}
+
 
 	//codonToAa, count in aaBucket
 	int aaBucket[21]={};
@@ -251,7 +268,8 @@ void GeneticCode::synonymous_sub(TSeq codon, std::mt19937 &mt) const{/*{{{*/
 	}
 }/*}}}*/
 
-seqan::String<seqan::AminoAcid> GeneticCode::translate(seqan::Dna5String seq) const{/*{{{*/
+template <typename TSeq>
+seqan::String<seqan::AminoAcid> GeneticCode::translate(TSeq seq) const{/*{{{*/
 	assert(seqan::length(seq)%3==0);
 	int aaLength=seqan::length(seq)/3;
 	seqan::String<seqan::AminoAcid> seq_aa;

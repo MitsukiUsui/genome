@@ -258,14 +258,14 @@ int main(int argc, char ** argv){
 	cout<<endl;
 	update_gc(gc, seqs, cdss);//update genetic code
 
-	//cdss.__show();
-	//cout<<endl;
-    //gc.__show();
-	//cout<<endl;
-	//gc.__show_freq();
-	//cout<<endl;
-	//gc.__show_freq(false);
-	//cout<<endl;
+	cdss.__show();
+	cout<<endl;
+    gc.__show();
+	cout<<endl;
+	gc.__show_freq();
+	cout<<endl;
+	gc.__show_freq(false);
+	cout<<endl;
     
 	shuffle_genome(seqs, cdss, gc, shuffleMode);
 
