@@ -6,6 +6,7 @@
 
 # ignore certain directory
 #/tmp/
+/genomeshuffle/build/
 
 # And all the file types I'm interested in.
 !.gitignore
@@ -17,5 +18,6 @@
 !*.ipynb
 !*.md
 !*.csv
+!CMakeLists.txt
 
 .ipynb_checkpoints
