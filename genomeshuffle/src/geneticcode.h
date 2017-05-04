@@ -167,13 +167,6 @@ GeneticCode::GeneticCode(std::string str){/*{{{*/
 		codon_ss[codonId]=codon;
 	}
 
-	std::cout<<seqan::length(codon_ss)<<std::endl;
-	for(int i=0;i<64;i++){
-		std::cout<<seqan::length(codon_ss[i])<<std::endl;
-		std::cout<<codon_ss[i]<<std::endl;
-	}
-
-
 	//codonToAa, count in aaBucket
 	int aaBucket[21]={};
 	for(int codonId=0; codonId<64;codonId++){

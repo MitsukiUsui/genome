@@ -47,6 +47,10 @@ seqan::Dna5String shuffle_synonymous(seqan::Dna5String & seq){
 }
 
 
+
+//============================================================
+//structure to convey shuffle command
+//============================================================
 struct ShuffleRegion{
 	int start;
 	int end;
@@ -68,8 +72,10 @@ void overwrite_region(TSeq & seq, ShuffleRegion const & region, GeneticCode & gc
 
 
 
-
+//============================================================
 //shuffle genome according to cdss end report
+//according to cdss and shuffleMode, construct SuffleRegion instance and call overwrite_region() method
+//============================================================
 template <typename TSeqs>
 void shuffle_genome(TSeqs & seqs, CDSs const  & cdss, GeneticCode & gc, int * shuffleMode){
 	std::random_device rd;
@@ -81,29 +87,19 @@ void shuffle_genome(TSeqs & seqs, CDSs const  & cdss, GeneticCode & gc, int * sh
 		int countShuffle[4] = { 0, 0, 0, 0 };
 		
 		int endMax = 0;
-		for(int i=0;i<cdss.cdss_vec[refIdx].size()-1;i++){
+		for (auto itr=cdss.cdss_vec[refIdx].begin(); itr!=cdss.cdss_vec[refIdx].end()-1; itr++){
+			int      start = itr->startPos;	
+			int        end = itr->endPos;
+			int       type = itr->type;
+			bool isForward = itr->isForward;
+			int  startNext = (itr+1)->startPos; 
 			
-			int      start = cdss.cdss_vec[refIdx][i].startPos;	
-			int        end = cdss.cdss_vec[refIdx][i].endPos;
-			int       type = cdss.cdss_vec[refIdx][i].type;
-			bool isForward = cdss.cdss_vec[refIdx][i].isForward;
-			int startNext = cdss.cdss_vec[refIdx][i+1].startPos;	
-			
-			
-			if(refIdx==2){
-				cout<<start<<","<<startNext<<endl;
-			}
-			
-			//if(start>startNext){
-			//	cout<<start<<","<<startNext<<endl;
-			//	std::exit(1);	
-			//}
-
 			assert(start<=startNext);//regions should be sorted
-
 			if(shuffleMode[0] == 1){//shuffle intergenic region
 				if (start > endMax){
-					ShuffleRegion sr(endMax, start, true, 1);
+					int shuffleStart=endMax;
+					int shuffleEnd=start;
+					ShuffleRegion sr(shuffleStart, shuffleEnd, true, 1);
 					overwrite_region(seqs[refIdx], sr, gc, mt);
 					countShuffle[1]+=(sr.end-sr.start);
 				}
@@ -117,9 +113,7 @@ void shuffle_genome(TSeqs & seqs, CDSs const  & cdss, GeneticCode & gc, int * sh
 					cand1 = end - 3 * ceil((double)(end - startNext) / 3);
 					cand2 = end - 3;
 					int shuffleEnd = std::min(cand1, cand2);
-
-
-
+					
 					if(shuffleEnd > shuffleStart){
 						ShuffleRegion sr(shuffleStart, shuffleEnd, isForward, shuffleMode[1]);
 						overwrite_region(seqs[refIdx], sr, gc, mt);
@@ -129,7 +123,7 @@ void shuffle_genome(TSeqs & seqs, CDSs const  & cdss, GeneticCode & gc, int * sh
 			}
 			endMax=std::max(end, endMax);
 		}
-
+		
 		countShuffle[0] = seqan::length(seqs[refIdx]);
 		for (int i = 1; i < 4; i++){
 			countShuffle[0] -= countShuffle[i];
@@ -149,12 +143,12 @@ void shuffle_genome(TSeqs & seqs, CDSs const  & cdss, GeneticCode & gc, int * sh
 //------------------------------------------------------------
 void update_gc(GeneticCode & gc, seqan::StringSet<seqan::Dna5String> & seqs, CDSs const & cdss){/*{{{*/
 	for(int refIdx=0;refIdx<seqan::length(seqs);refIdx++){
-		for(int i=0;i<cdss.cdss_vec[refIdx].size()-1;i++){
-			int      start = cdss.cdss_vec[refIdx][i].startPos;	
-			int        end = cdss.cdss_vec[refIdx][i].endPos;
-			int       type = cdss.cdss_vec[refIdx][i].type;
-			bool isForward = cdss.cdss_vec[refIdx][i].isForward;
-
+		for(auto itr=cdss.cdss_vec[refIdx].begin(); itr!=cdss.cdss_vec[refIdx].end()-1;itr++){
+			int      start = itr->startPos;	
+			int        end = itr->endPos;
+			int       type = itr->type;
+			bool isForward = itr->isForward;
+			
 			if(type==0){
 				if(isForward){
 					seqan::Infix<seqan::Dna5String>::Type sub=seqan::infix(seqs[refIdx],start, end);
