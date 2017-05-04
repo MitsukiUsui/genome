@@ -33,7 +33,7 @@ Creates Simulated genomes and compare altorf properties with real genome.
 
 ## Compilation of .cpp
 ```
-cd $PATH_TO_DESIGNATED_DIR
+cd $PATH_TO_DESIGNATED_DIRs
 mkdir build
 cd build
 cmake ../src
@@ -41,4 +41,4 @@ make
 ```
 * In case you obtained SeqAn from a git clone, you need to specify the install location and include path.
     * `cmake ../src -DCMAKE_PREFIX_PATH="$HOME/software/seqan/util/cmake" -DSEQAN_INCLUDE_PATH="$HOME/software/seqan/include"`
-        * you need to change path according to yours
+        * change paths according to yours
