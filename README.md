@@ -29,6 +29,8 @@ Creates Simulated genomes and compare altorf properties with real genome.
 * CMake: <https://cmake.org/>
     * seqan recommends compilation with CMake <http://seqan.readthedocs.io/en/master/Infrastructure/Use/FindSeqAnCMake.html>
 
+* Anaconda (ver 3.X)
+
 ## Compilation of .cpp
 ```
 cd $PATH_TO_DESIGNATED_DIR
@@ -37,6 +39,6 @@ cd build
 cmake ../src
 make
 ```
-* * In case you obtained SeqAn from a git clone, you need to specify the install location and include path.
+* In case you obtained SeqAn from a git clone, you need to specify the install location and include path.
     * `cmake ../src -DCMAKE_PREFIX_PATH="$HOME/software/seqan/util/cmake" -DSEQAN_INCLUDE_PATH="$HOME/software/seqan/include"`
         * you need to change path according to yours
