@@ -19,7 +19,7 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
-seqan::Dna5String shuffle_base(seqan::Dna5String & seq){
+void shuffle_base(seqan::Dna5String & seq){
 	seqan::Dna5String retVal;
 	seqan::resize(retVal, seqan::length(seq));
 	for(unsigned i=0;i<seqan::length(seq);i++){
@@ -51,7 +51,7 @@ seqan::Dna5String shuffle_synonymous(seqan::Dna5String & seq){
 //============================================================
 //structure to convey shuffle command
 //============================================================
-struct ShuffleRegion{
+struct ShuffleRegion{/*{{{*/
 	int start;
 	int end;
 	bool isForward;
@@ -63,11 +63,40 @@ struct ShuffleRegion{
 		isForward=i;
 		mode=m;
 	}
-};
+};/*}}}*/
 
 template <typename TSeq>
-void overwrite_region(TSeq & seq, ShuffleRegion const & region, GeneticCode & gc, std::mt19937 & mt){
+void overwrite_region(TSeq & seq, ShuffleRegion const & sr, GeneticCode const & gc, std::mt19937 & mt){
 	//do overwrite
+	
+	seqan::DnaString subseq=seqan::infix(seq, sr.start, sr.end);
+	if(!sr.isForward){
+		seqan::reverseComplement(subseq);
+	}
+	
+	switch (sr.mode){
+		case 1:
+			shuffle_base(subseq);
+			break;
+		case 2:
+			shuffle_codon(subseq);
+			break;
+		case 3:
+			shuffle_synonymous(subseq);
+			break;
+		default:
+			cerr<<"ERROR: undefined shuffle mode "<<sr.mode<<endl;
+			std::exit(1);
+	}
+
+	if(!sr.isForward){
+		seqan::reverseComplement(subseq);
+	}
+
+	for(unsigned i=0;i<seqan::length(subseq);i++){
+		seq[sr.start+i]=subseq[i];
+	}
+
 }
 
 
@@ -77,7 +106,7 @@ void overwrite_region(TSeq & seq, ShuffleRegion const & region, GeneticCode & gc
 //according to cdss and shuffleMode, construct SuffleRegion instance and call overwrite_region() method
 //============================================================
 template <typename TSeqs>
-void shuffle_genome(TSeqs & seqs, CDSs const  & cdss, GeneticCode & gc, int * shuffleMode){
+void shuffle_genome(TSeqs & seqs, CDSs const  & cdss, GeneticCode const & gc, int * shuffleMode){
 	std::random_device rd;
 	std::mt19937 mt(rd());
 
@@ -88,9 +117,9 @@ void shuffle_genome(TSeqs & seqs, CDSs const  & cdss, GeneticCode & gc, int * sh
 		
 		int endMax = 0;
 		for (auto itr=cdss.cdss_vec[refIdx].begin(); itr!=cdss.cdss_vec[refIdx].end()-1; itr++){
-			int      start = itr->startPos;	
-			int        end = itr->endPos;
-			int       type = itr->type;
+			int		 start = itr->startPos;	
+			int		   end = itr->endPos;
+			int		  type = itr->type;
 			bool isForward = itr->isForward;
 			int  startNext = (itr+1)->startPos; 
 			
@@ -144,9 +173,9 @@ void shuffle_genome(TSeqs & seqs, CDSs const  & cdss, GeneticCode & gc, int * sh
 void update_gc(GeneticCode & gc, seqan::StringSet<seqan::Dna5String> & seqs, CDSs const & cdss){/*{{{*/
 	for(int refIdx=0;refIdx<seqan::length(seqs);refIdx++){
 		for(auto itr=cdss.cdss_vec[refIdx].begin(); itr!=cdss.cdss_vec[refIdx].end()-1;itr++){
-			int      start = itr->startPos;	
-			int        end = itr->endPos;
-			int       type = itr->type;
+			int		 start = itr->startPos;	
+			int		   end = itr->endPos;
+			int		  type = itr->type;
 			bool isForward = itr->isForward;
 			
 			if(type==0){
@@ -170,26 +199,26 @@ void update_gc(GeneticCode & gc, seqan::StringSet<seqan::Dna5String> & seqs, CDS
 //parse arguments 
 //------------------------------------------------------------
 void set_parser(seqan::ArgumentParser & parser, int argc, char ** argv){/*{{{*/
-    seqan::addUsageLine(parser,
-        "\"seqFilepath\" \"gffFilepath\"");
-    seqan::addDescription(parser,
-        "This program . "
-        );
-    addArgument(parser, seqan::ArgParseArgument(
-        seqan::ArgParseArgument::INPUT_FILE, "seqFilepath"));
-    addArgument(parser, seqan::ArgParseArgument(
-        seqan::ArgParseArgument::INPUT_FILE, "gffFilepath"));
-    addArgument(parser, seqan::ArgParseArgument(
-        seqan::ArgParseArgument::INTEGER, "shuffleMode1"));
-    addArgument(parser, seqan::ArgParseArgument(
-        seqan::ArgParseArgument::INTEGER, "shuffleMode2"));
-    addOption(parser, seqan::ArgParseOption(
-        "d", "dryrun", "Do dryrun"));
-    
+	seqan::addUsageLine(parser,
+		"\"seqFilepath\" \"gffFilepath\"");
+	seqan::addDescription(parser,
+		"This program . "
+		);
+	addArgument(parser, seqan::ArgParseArgument(
+		seqan::ArgParseArgument::INPUT_FILE, "seqFilepath"));
+	addArgument(parser, seqan::ArgParseArgument(
+		seqan::ArgParseArgument::INPUT_FILE, "gffFilepath"));
+	addArgument(parser, seqan::ArgParseArgument(
+		seqan::ArgParseArgument::INTEGER, "shuffleMode1"));
+	addArgument(parser, seqan::ArgParseArgument(
+		seqan::ArgParseArgument::INTEGER, "shuffleMode2"));
+	addOption(parser, seqan::ArgParseOption(
+		"d", "dryrun", "Do dryrun"));
+	
 	seqan::ArgumentParser::ParseResult res = seqan::parse(parser, argc, argv);
-    if (res != seqan::ArgumentParser::PARSE_OK){
-        std::exit(1);
-    }
+	if (res != seqan::ArgumentParser::PARSE_OK){
+		std::exit(1);
+	}
 }/*}}}*/
 
 
@@ -210,13 +239,13 @@ int main(int argc, char ** argv){
 	bool dryrun=seqan::isSet(parser, "dryrun");
 	//summarize 
 	cout<<endl<<"PROCESSING..."<<endl;
-	cout << "\tseqFilepath  : " << seqFilepath << endl;
-    cout << "\tgffFilepath  : " << gffFilepath << endl;
-    cout << "\tshuffle mode : " << shuffleMode[0] << ", " << shuffleMode[1] << endl;
+	cout << "\tseqFilepath	: " << seqFilepath << endl;
+	cout << "\tgffFilepath	: " << gffFilepath << endl;
+	cout << "\tshuffle mode : " << shuffleMode[0] << ", " << shuffleMode[1] << endl;
 	if(dryrun){
-		cout<<"\texecution    : DRYRUN"<<endl;
+		cout<<"\texecution	  : DRYRUN"<<endl;
 	}
-    cout << endl;
+	cout << endl;
 	
 
 	//------------------------------------------------------------
@@ -240,7 +269,7 @@ int main(int argc, char ** argv){
 	//process gff and genetic code
 	//------------------------------------------------------------
 	std::string str="FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG";
-    GeneticCode gc(str);//genetic code needs to be initialized first, in order to judge cds types
+	GeneticCode gc(str);//genetic code needs to be initialized first, in order to judge cds types
 	seqan::String<seqan::GffRecord> records;
 	read_gff(records,gffFilepath);
 	CDSs cdss(records, ids, seqs, gc);
@@ -254,13 +283,13 @@ int main(int argc, char ** argv){
 
 	cdss.__show();
 	cout<<endl;
-    gc.__show();
+	gc.__show();
 	cout<<endl;
 	gc.__show_freq();
 	cout<<endl;
 	gc.__show_freq(false);
 	cout<<endl;
-    
+	
 	shuffle_genome(seqs, cdss, gc, shuffleMode);
 
 	return 0;
