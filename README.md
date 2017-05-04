@@ -4,7 +4,7 @@ This is a sub project of altorf, focusing on genome.
 ## Summary
 Creates Simulated genomes and compare altorf properties with real genome.
 
-## Role of each Directory
+## Role of each directory
 
 ### speciespick
 * choose which species in RefSeq to analyze.
@@ -13,7 +13,7 @@ Creates Simulated genomes and compare altorf properties with real genome.
 * split downloaded .fna file, and fill ambiguous bases if needed
 
 ### genomeshuffle
-* create simulated genome according to .gff file
+* create simulated genome according to .fna & .gff
 
 ### patternanalyze
 * analyze pattern of altorf comparing real genome and simulated genome
