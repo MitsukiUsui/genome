@@ -7,23 +7,23 @@ Creates Simulated genomes and compare altorf properties with real genome.
 ## Role of each directory
 
 ### speciespick
-* choose which species in RefSeq to analyze.
+* Chooses which species in RefSeq to analyze.
 
 ### preprocess
-* split downloaded .fna file, and fill ambiguous bases if needed
+* Splits downloaded .fna files and fill ambiguous bases randomly if needed.
 
 ### genomeshuffle
-* create simulated genome according to .fna & .gff
+* Creates simulated genomes according to .fna & .gff files.
 
 ### patternanalyze
-* analyze pattern of altorf comparing real genome and simulated genome
+* Analyze pattern of altorf comparing real genome and simulated genome.
 
 
 ## Prerequisites
 * seqan: <https://www.seqan.de/>
-    * an open source C++ library of efficient algorithms and data structures for the analysis of sequences
-    * for installation, please refered to <http://seqan.readthedocs.io/en/master/Infrastructure/Use/Install.html>  
-        * In short:
+    * An open source C++ library of efficient algorithms and data structures for the analysis of sequences.
+    * For installation, please refered to <http://seqan.readthedocs.io/en/master/Infrastructure/Use/Install.html>  
+        * In short:  
             0. Mac: `brew install homebrew/science/seqan`
             0. Beyond: clone github repository <https://github.com/seqan/seqan>
 * CMake: <https://cmake.org/>
