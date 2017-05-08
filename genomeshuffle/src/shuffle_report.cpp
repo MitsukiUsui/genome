@@ -19,31 +19,54 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
-void shuffle_base(seqan::Dna5String & seq){
-	seqan::Dna5String retVal;
-	seqan::resize(retVal, seqan::length(seq));
-	for(unsigned i=0;i<seqan::length(seq);i++){
-		retVal[i]='A';
+
+template <typename TSeq>
+void shuffle_base(TSeq & seq, std::mt19937 & mt){
+	unsigned bpLength=seqan::length(seq);
+	std::vector<unsigned> v(bpLength);
+	std::iota(v.begin(), v.end(), 0);
+	std::shuffle(v.begin(), v.end(), mt);
+
+	seqan::DnaString tmp;//TBI: adjust to template
+	seqan::resize(tmp, bpLength);
+	for(unsigned i=0; i < bpLength; i++){
+		tmp[i]=seq[v[i]];
 	}
-	return retVal;
+	seqan::replace(seq, 0, bpLength, tmp);
+	return;
 }
 
-seqan::Dna5String shuffle_codon(seqan::Dna5String & seq){
-	seqan::Dna5String retVal;
-	seqan::resize(retVal, seqan::length(seq));
-	for(unsigned i=0;i<seqan::length(seq);i++){
-		retVal[i]='C';
+template <typename TSeq>
+void shuffle_codon(TSeq & seq, std::mt19937 & mt){
+	unsigned bpLength=seqan::length(seq);
+	assert(bpLength % 3 == 0);
+	unsigned aaLength = bpLength / 3;
+	std::vector<unsigned> v(aaLength);
+	std::iota(v.begin(), v.end(), 0);
+	std::shuffle(v.begin(), v.end(), mt);
+
+	seqan::DnaString tmp;//TBI: adjust to template
+	seqan::resize(tmp, bpLength);
+	for(unsigned i=0;i<aaLength;i++){
+		for(unsigned j=0;j<3;j++){
+			tmp[3*i+j]=seq[3*v[i]+j];
+		}
 	}
-	return retVal;
+	seqan::replace(seq, 0, bpLength, tmp);
+	return;
 }
 
-seqan::Dna5String shuffle_synonymous(seqan::Dna5String & seq){
-	seqan::Dna5String retVal;
-	seqan::resize(retVal, seqan::length(seq));
-	for(unsigned i=0;i<seqan::length(seq);i++){
-		retVal[i]='G';
+template <typename TSeq>
+void shuffle_synonymous(TSeq & seq, GeneticCode const & gc, std::mt19937 & mt){
+	unsigned bpLength=seqan::length(seq);
+	assert(bpLength % 3 == 0);
+	unsigned aaLength = bpLength / 3;
+
+	for(unsigned i=0; i<aaLength; i++){
+		seqan::Infix<seqan::DnaString>::Type codon=seqan::infix(seq, 3*i, 3*(i+1));
+		gc.synonymous_sub(codon, mt);
 	}
-	return retVal;
+	return;
 }
 
 
@@ -67,22 +90,20 @@ struct ShuffleRegion{/*{{{*/
 
 template <typename TSeq>
 void overwrite_region(TSeq & seq, ShuffleRegion const & sr, GeneticCode const & gc, std::mt19937 & mt){
-	//do overwrite
-	
-	seqan::DnaString subseq=seqan::infix(seq, sr.start, sr.end);
+	seqan::DnaString subseq=seqan::infix(seq, sr.start, sr.end);//create new DnaString object
 	if(!sr.isForward){
 		seqan::reverseComplement(subseq);
 	}
 	
 	switch (sr.mode){
 		case 1:
-			shuffle_base(subseq);
+			shuffle_base(subseq, mt);
 			break;
 		case 2:
-			shuffle_codon(subseq);
+			shuffle_codon(subseq, mt);
 			break;
 		case 3:
-			shuffle_synonymous(subseq);
+			shuffle_synonymous(subseq, gc, mt);
 			break;
 		default:
 			cerr<<"ERROR: undefined shuffle mode "<<sr.mode<<endl;
@@ -93,10 +114,9 @@ void overwrite_region(TSeq & seq, ShuffleRegion const & sr, GeneticCode const & 
 		seqan::reverseComplement(subseq);
 	}
 
-	for(unsigned i=0;i<seqan::length(subseq);i++){
-		seq[sr.start+i]=subseq[i];
-	}
-
+	//overwrite
+	seqan::replace(seq, sr.start, sr.end, subseq);
+	return;
 }
 
 
@@ -116,7 +136,7 @@ void shuffle_genome(TSeqs & seqs, CDSs const  & cdss, GeneticCode const & gc, in
 		int countShuffle[4] = { 0, 0, 0, 0 };
 		
 		int endMax = 0;
-		for (auto itr=cdss.cdss_vec[refIdx].begin(); itr!=cdss.cdss_vec[refIdx].end()-1; itr++){
+		for (auto itr=cdss.cdss_vec[refIdx].begin(); itr!=cdss.cdss_vec[refIdx].end()-1; itr++){//skip last sentinel
 			int		 start = itr->startPos;	
 			int		   end = itr->endPos;
 			int		  type = itr->type;
@@ -124,7 +144,8 @@ void shuffle_genome(TSeqs & seqs, CDSs const  & cdss, GeneticCode const & gc, in
 			int  startNext = (itr+1)->startPos; 
 			
 			assert(start<=startNext);//regions should be sorted
-			if(shuffleMode[0] == 1){//shuffle intergenic region
+			//shuffle intergenic region
+			if(shuffleMode[0] == 1){
 				if (start > endMax){
 					int shuffleStart=endMax;
 					int shuffleEnd=start;
@@ -133,7 +154,8 @@ void shuffle_genome(TSeqs & seqs, CDSs const  & cdss, GeneticCode const & gc, in
 					countShuffle[1]+=(sr.end-sr.start);
 				}
 			}
-			if (shuffleMode[1] > 0){//shuffle genetic region
+			//shuffle genetic region
+			if (shuffleMode[1] > 0){
 				if (is_in(type, shufflableTypes)){
 					int cand1 = start + 3 * ceil((double)(endMax - start) / 3);
 					int cand2 = start + 3;
@@ -152,12 +174,13 @@ void shuffle_genome(TSeqs & seqs, CDSs const  & cdss, GeneticCode const & gc, in
 			}
 			endMax=std::max(end, endMax);
 		}
-		
+	
+		//calculate unshuffled region
 		countShuffle[0] = seqan::length(seqs[refIdx]);
 		for (int i = 1; i < 4; i++){
 			countShuffle[0] -= countShuffle[i];
 		}
-
+		//shuffle report
 		cout<<"REFIDX: "<<refIdx<<endl;
 		cout<<"\tTotal: "<<seqan::length(seqs[refIdx])<<" bp."<<endl;
 		for (int i = 0; i < 4; i++){
@@ -170,7 +193,7 @@ void shuffle_genome(TSeqs & seqs, CDSs const  & cdss, GeneticCode const & gc, in
 //------------------------------------------------------------
 //update GeneticCode (codonCount) according to CDSs
 //------------------------------------------------------------
-void update_gc(GeneticCode & gc, seqan::StringSet<seqan::Dna5String> & seqs, CDSs const & cdss){/*{{{*/
+void update_gc(GeneticCode & gc, seqan::StringSet<seqan::Dna5String> & seqs, CDSs const & cdss){//TBI: utilize template/*{{{*/
 	for(int refIdx=0;refIdx<seqan::length(seqs);refIdx++){
 		for(auto itr=cdss.cdss_vec[refIdx].begin(); itr!=cdss.cdss_vec[refIdx].end()-1;itr++){
 			int		 start = itr->startPos;	
@@ -209,6 +232,8 @@ void set_parser(seqan::ArgumentParser & parser, int argc, char ** argv){/*{{{*/
 	addArgument(parser, seqan::ArgParseArgument(
 		seqan::ArgParseArgument::INPUT_FILE, "gffFilepath"));
 	addArgument(parser, seqan::ArgParseArgument(
+		seqan::ArgParseArgument::OUTPUT_FILE, "outFilepath"));
+	addArgument(parser, seqan::ArgParseArgument(
 		seqan::ArgParseArgument::INTEGER, "shuffleMode1"));
 	addArgument(parser, seqan::ArgParseArgument(
 		seqan::ArgParseArgument::INTEGER, "shuffleMode2"));
@@ -233,14 +258,17 @@ int main(int argc, char ** argv){
 	seqan::getArgumentValue(seqFilepath, parser, 0);
 	seqan::CharString gffFilepath;
 	seqan::getArgumentValue(gffFilepath, parser, 1);
+	seqan::CharString outFilepath;
+	seqan::getArgumentValue(outFilepath, parser, 2);
 	int shuffleMode[2]={};
-	seqan::getArgumentValue(shuffleMode[0], parser, 2);
-	seqan::getArgumentValue(shuffleMode[1], parser, 3);
+	seqan::getArgumentValue(shuffleMode[0], parser, 3);
+	seqan::getArgumentValue(shuffleMode[1], parser, 4);
 	bool dryrun=seqan::isSet(parser, "dryrun");
 	//summarize 
 	cout<<endl<<"PROCESSING..."<<endl;
 	cout << "\tseqFilepath	: " << seqFilepath << endl;
 	cout << "\tgffFilepath	: " << gffFilepath << endl;
+	cout << "\toutFilepath	: " << gffFilepath << endl;
 	cout << "\tshuffle mode : " << shuffleMode[0] << ", " << shuffleMode[1] << endl;
 	if(dryrun){
 		cout<<"\texecution	  : DRYRUN"<<endl;
@@ -261,7 +289,7 @@ int main(int argc, char ** argv){
 	//summarize 
 	cout<<"DONE reading "<<seqFilepath<<endl;
 	for(unsigned i=0;i<seqan::length(ids);i++){
-		cout<<"\t"<<ids[i]<<" : "<<seqan::length(seqs[i])<<endl;
+		cout<<"\t"<<ids[i]<<" : "<<seqan::length(seqs[i])<<" bp"<<endl;
 	}
 	cout<<endl;
 
@@ -276,21 +304,31 @@ int main(int argc, char ** argv){
 	//summarize 
 	cout<<"DONE reading "<<gffFilepath<<endl;
 	for(unsigned i=0;i<seqan::length(ids);i++){
-		cout<<"\t"<<ids[i]<<" : "<<cdss.cdss_vec[i].size()<<endl;
+		cout<<"\t"<<ids[i]<<" : "<<cdss.cdss_vec[i].size()<<" cds records"<<endl;
 	}
 	cout<<endl;
 	update_gc(gc, seqs, cdss);//update genetic code
 
-	cdss.__show();
-	cout<<endl;
-	gc.__show();
-	cout<<endl;
-	gc.__show_freq();
-	cout<<endl;
+	//cdss.__show();
+	//cout<<endl;
+	//gc.__show();
+	//cout<<endl;
+	//gc.__show_freq();
+	//cout<<endl;
 	gc.__show_freq(false);
 	cout<<endl;
 	
 	shuffle_genome(seqs, cdss, gc, shuffleMode);
 
+	gc.clear_count();
+	gc.__show_freq(false);
+	cout<<endl;
+	update_gc(gc, seqs, cdss);
+	gc.__show_freq(false);
+	cout<<endl;
+	
+
+	write_fasta(ids, seqs, outFilepath);	
+	
 	return 0;
 }

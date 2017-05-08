@@ -52,7 +52,7 @@ public:
 	//random inplace synonymous substitution, according to codonFreq.
 	//------------------------------------------------------------
 	template <typename TSeq> 
-	void synonymous_sub(TSeq codon, std::mt19937 &mt) const;
+	void synonymous_sub(TSeq & codon, std::mt19937 &mt) const;
 	template <typename TSeq>
 	seqan::String<seqan::AminoAcid> translate(TSeq seq) const;//ISSUE does not support ambiguous base for now
 	template <typename TSeq>
@@ -200,7 +200,7 @@ GeneticCode::~GeneticCode(){}
 //============================================================
 
 void GeneticCode::clear_count(){/*{{{*/
-	for(int i; i<64;i++){
+	for(int i=0; i<64;i++){
 		codonCount[i]=0;
 		codonFreq[i]=0;
 	}	
@@ -238,7 +238,7 @@ void GeneticCode::calc_freq(){/*{{{*/
 }/*}}}*/
 
 template <typename TSeq>
-void GeneticCode::synonymous_sub(TSeq codon, std::mt19937 &mt) const{/*{{{*/
+void GeneticCode::synonymous_sub(TSeq & codon, std::mt19937 & mt) const{/*{{{*/
 	int codonIdOld=codon_encode(codon);
 	int aaId=codonToAa[codonIdOld];
 
@@ -250,8 +250,9 @@ void GeneticCode::synonymous_sub(TSeq codon, std::mt19937 &mt) const{/*{{{*/
 	for(int i=aaIndex[aaId];i<aaIndex[aaId+1];i++){
 		int codonId=aaToCodon[i];
 		cumSum+=codonFreq[codonId];
-		if(cumSum>d){
+		if(cumSum>=d){
 			codonIdNew=codonId;
+			break;
 		}
 	}
 	assert(codonIdNew!=-1);

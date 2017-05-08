@@ -34,6 +34,26 @@ void read_fasta(Tids & ids, TSeqs & seqs, TFilepath const & filepath){/*{{{*/
 	return;
 }/*}}}*/
 
+//------------------------------------------------------------
+//input:  filepath (path to output file)
+//modify: ids (sequence ids), seqs(sequences)
+//------------------------------------------------------------
+template <typename Tids, typename TSeqs, typename TFilepath>
+void write_fasta(Tids const & ids, TSeqs const & seqs, TFilepath const & filepath){/*{{{*/
+	seqan::SeqFileOut seqFileOut;
+	if(!seqan::open(seqFileOut, seqan::toCString(filepath))){
+		std::cerr<<"ERROR: Could not open "<<filepath<<std::endl;
+		std::exit(1);
+	}
+	try{
+		seqan::writeRecords(seqFileOut, ids, seqs);
+	}
+	catch (seqan::Exception const & e){
+		std::cout<<"ERROR: "<<e.what()<<std::endl;
+		std::exit(2);
+	}
+	return;
+}/*}}}*/
 
 //------------------------------------------------------------
 //input:  filepath (path to gff file)
