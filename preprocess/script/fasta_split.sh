@@ -1,5 +1,5 @@
-#input="../speciespick/head_picked.txt"
-input="../speciespick/picked_assembly_summary.csv"
+input="../../speciespick/picked_assembly_summary.csv"
+#input="../../speciespick/head_picked.txt"
 
 array=(`awk -F, 'NR>1 {print $4}' ${input}`) 
 
@@ -12,6 +12,5 @@ do
     plsFilepath=${outdir}fasta/${basename}_plasmid.fna
     logFilepath=${outdir}preprocess/split/${basename}_split.log
     echo ${basename}
-    ./fasta_split ${basename} ${seqFilepath} ${chrFilepath} ${plsFilepath} ${logFilepath} 1
-#	echo "./fasta_split ${basename} ${seqFilepath} ${chrFilepath} ${plsFilepath} ${logFilepath}"
+    ../build/fasta_split ${basename} ${seqFilepath} ${chrFilepath} ${plsFilepath} ${logFilepath} --convert 2
 done
