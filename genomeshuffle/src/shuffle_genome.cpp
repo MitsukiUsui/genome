@@ -132,6 +132,7 @@ void shuffle_genome(TSeqs & seqs, CDSs const  & cdss, GeneticCode const & gc, in
 
 	std::vector<int> shufflableTypes{0}; 
 
+	cout<<"\tSHUFFLE REPORT : "<<endl;
 	for(unsigned refIdx=0; refIdx<seqan::length(seqs);refIdx++){
 		int countShuffle[4] = { 0, 0, 0, 0 };
 		
@@ -181,12 +182,11 @@ void shuffle_genome(TSeqs & seqs, CDSs const  & cdss, GeneticCode const & gc, in
 			countShuffle[0] -= countShuffle[i];
 		}
 		//shuffle report
-		cout<<"REFIDX: "<<refIdx<<endl;
-		cout<<"\tTotal: "<<seqan::length(seqs[refIdx])<<" bp."<<endl;
+		cout<<"\t\tREFIDX: "<<refIdx<<endl;
+		cout<<"\t\t\tTotal: "<<seqan::length(seqs[refIdx])<<" bp."<<endl;
 		for (int i = 0; i < 4; i++){
-			cout << "\t\tmode" << i << " shuffled: " << countShuffle[i] << " bp." << endl;
+			cout << "\t\t\t\tmode" << i << " shuffled: " << countShuffle[i] << " bp." << endl;
 		}
-		cout<<endl;
 	}
 }
 
@@ -251,7 +251,7 @@ int main(int argc, char ** argv){
 	//------------------------------------------------------------
 	//parse arguments
 	//------------------------------------------------------------
-	seqan::ArgumentParser parser("shuffle_report");
+	seqan::ArgumentParser parser("shuffle_genome");
 	set_parser(parser, argc, argv);
 	
 	seqan::CharString seqFilepath;
@@ -264,17 +264,16 @@ int main(int argc, char ** argv){
 	seqan::getArgumentValue(shuffleMode[0], parser, 3);
 	seqan::getArgumentValue(shuffleMode[1], parser, 4);
 	bool dryrun=seqan::isSet(parser, "dryrun");
-	//summarize 
-	cout<<endl<<"PROCESSING..."<<endl;
-	cout << "\tseqFilepath	: " << seqFilepath << endl;
-	cout << "\tgffFilepath	: " << gffFilepath << endl;
-	cout << "\toutFilepath	: " << gffFilepath << endl;
-	cout << "\tshuffle mode : " << shuffleMode[0] << ", " << shuffleMode[1] << endl;
-	if(dryrun){
-		cout<<"\texecution	  : DRYRUN"<<endl;
-	}
-	cout << endl;
 	
+	//configuration
+	cout<<"\tCONFIGURATION"<<endl;
+	cout << "\t\tseqFilepath	: " << seqFilepath << endl;
+	cout << "\t\tgffFilepath	: " << gffFilepath << endl;
+	cout << "\t\toutFilepath	: " << outFilepath << endl;
+	cout << "\t\tshuffle mode : " << shuffleMode[0] << ", " << shuffleMode[1] << endl;
+	if(dryrun){
+		cout<<"\t\texecution	  : DRYRUN"<<endl;
+	}
 
 	//------------------------------------------------------------
 	//process fasta 
@@ -287,11 +286,10 @@ int main(int argc, char ** argv){
 		ids[i]=seqan::CharString(split(seqan::toCString(ids[i]),' ')[0]);
 	}
 	//summarize 
-	cout<<"DONE reading "<<seqFilepath<<endl;
+	cout<<"\tDONE reading "<<seqFilepath<<endl;
 	for(unsigned i=0;i<seqan::length(ids);i++){
-		cout<<"\t"<<ids[i]<<" : "<<seqan::length(seqs[i])<<" bp"<<endl;
+		cout<<"\t\t"<<ids[i]<<" : "<<seqan::length(seqs[i])<<" bp"<<endl;
 	}
-	cout<<endl;
 
 	//------------------------------------------------------------
 	//process gff and genetic code
@@ -302,11 +300,10 @@ int main(int argc, char ** argv){
 	read_gff(records,gffFilepath);
 	CDSs cdss(records, ids, seqs, gc);
 	//summarize 
-	cout<<"DONE reading "<<gffFilepath<<endl;
+	cout<<"\tDONE reading "<<gffFilepath<<endl;
 	for(unsigned i=0;i<seqan::length(ids);i++){
-		cout<<"\t"<<ids[i]<<" : "<<cdss.cdss_vec[i].size()<<" cds records"<<endl;
+		cout<<"\t\t"<<ids[i]<<" : "<<cdss.cdss_vec[i].size()<<" cds records"<<endl;
 	}
-	cout<<endl;
 	update_gc(gc, seqs, cdss);//update genetic code
 
 	//cdss.__show();
@@ -315,17 +312,17 @@ int main(int argc, char ** argv){
 	//cout<<endl;
 	//gc.__show_freq();
 	//cout<<endl;
-	gc.__show_freq(false);
-	cout<<endl;
+	//gc.__show_freq(false);
+	//cout<<endl;
 	
 	shuffle_genome(seqs, cdss, gc, shuffleMode);
 
-	gc.clear_count();
-	gc.__show_freq(false);
-	cout<<endl;
-	update_gc(gc, seqs, cdss);
-	gc.__show_freq(false);
-	cout<<endl;
+	//gc.clear_count();
+	//gc.__show_freq(false);
+	//cout<<endl;
+	//update_gc(gc, seqs, cdss);
+	//gc.__show_freq(false);
+	//cout<<endl;
 	
 
 	write_fasta(ids, seqs, outFilepath);	
