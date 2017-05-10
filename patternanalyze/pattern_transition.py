@@ -1,4 +1,4 @@
-#!/home/mitsuki/.pyenv/versions/anaconda3-2.5.0/bin/python3.5
+#!/home/mitsuki/.pyenv/versions/anaconda3-4.2.0/bin/python
 
 import numpy as np
 import pandas as pd
@@ -129,18 +129,18 @@ patternDegScore=[get_score(pattern) for pattern in patternDegs_lst]
 ##	prefix _p stands for pair, which means _p[real] belongs to real genome and vice versa
 ##		filepath_p, seqRecords_p, seqRecord_p, orfCounter_p
 ##============================================================
-def main(realFilepath, simuFilepath, windowSize_bp, countFilepath, transitionFilepath, transitiondegenerateFilepath):
+def main(realFilepath, simuFilepath, windowSize_bp, countFilepath, transFilepath, transdegFilepath):
 
 	#Configuration
 	assert windowSize_bp % 3 == 2
 	windowSize_aa=int((windowSize_bp-2)/3)
-	print("BEGIN processing...")
-	print("\tREAL        : "+realFilepath)
-	print("\tSIMU        : "+simuFilepath)
-	print("\tWindow size : "+str(windowSize_bp)+" ("+str(windowSize_aa)+")")
-	print("\tOUT COUNT   : "+countFilepath)
-	print("\tOUT TRANS   : "+transitionFilepath)
-	print("\tOUT TRANSDEG: "+transitiondegenerateFilepath)
+	print("\tCONFIGURATION")
+	print("\t\tREAL        : "+realFilepath)
+	print("\t\tSIMU        : "+simuFilepath)
+	print("\t\tWindow size : "+str(windowSize_bp)+" ("+str(windowSize_aa)+")")
+	print("\t\tOUT COUNT   : "+countFilepath)
+	print("\t\tOUT TRANS   : "+transFilepath)
+	print("\t\tOUT TRANSDEG: "+transdegFilepath)
 	
 	#define index for real genome and simulated genome
 	real = 0
@@ -158,7 +158,7 @@ def main(realFilepath, simuFilepath, windowSize_bp, countFilepath, transitionFil
 		seqRecords_p.append(seqRecords)
 	assert len(seqRecords_p[real])==len(seqRecords_p[simu])
 	numOfSeqs=len(seqRecords_p[real])
-
+	print("\tDONE reading seqs")
 
 	#define 
 	orfCounter_p=[np.zeros(6),np.zeros(6)]
@@ -187,8 +187,8 @@ def main(realFilepath, simuFilepath, windowSize_bp, countFilepath, transitionFil
 			if(i>=windowSize_bp-1):#when window can be defined
 				transitionMat[pid_p[real]][pid_p[simu]]+=1
 				transitionDegMat[pdid_p[real]][pdid_p[simu]]+=1
-		
-
+	print("\tDONE processing")
+	
 	distDegArr_p=[np.sum(transitionDegMat, axis=simu), np.sum(transitionDegMat, axis=real)]
 	countArr_p=[np.zeros(7).astype(int), np.zeros(7).astype(int)]
 	for idx in range(2):
@@ -199,12 +199,15 @@ def main(realFilepath, simuFilepath, windowSize_bp, countFilepath, transitionFil
 	count_df["real"]=countArr_p[real]
 	count_df["simu"]=countArr_p[simu]
 	count_df.to_csv(countFilepath)
+	print("\tDONE outputing count to "+countFilepath)
 	df=pd.DataFrame(transitionMat,columns=patterns_lst,index=patterns_lst)
 	df.index.name = 'idx'
-	df.to_csv(transitionFilepath)
+	df.to_csv(transFilepath)
+	print("\tDONE outputing trans to "+transFilepath)
 	deg_df=pd.DataFrame(transitionDegMat,columns=patternDegs_lst,index=patternDegs_lst)
 	deg_df.index.name = 'idx'
-	deg_df.to_csv(transitiondegenerateFilepath)
+	deg_df.to_csv(transdegFilepath)
+	print("\tDONE outputing transdeg to "+transdegFilepath)
 	
 if __name__=="__main__":
 	main(sys.argv[1], sys.argv[2], int(sys.argv[3]), sys.argv[4], sys.argv[5], sys.argv[6])
