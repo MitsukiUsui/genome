@@ -4,7 +4,7 @@ catalogDf=pd.read_csv("summary_split.csv")
 catalogDf.head()
 
 #read each output of fatt composition and summarize into out_df
-basedir="/home/mitsuki/out/altorf/genome/preprocess/comp/"
+basedir="/data/mitsuki/out/altorf/genome/preprocess/comp/"
 dct_lst=[]
 for idx,record in catalogDf[catalogDf["num_of_seqs"]>0].iterrows():#exclude empty files
     dct={}
