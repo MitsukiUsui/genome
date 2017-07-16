@@ -38,7 +38,11 @@ def main(inFilepath,outFilepath):
 
 	out_df=pd.DataFrame(dct_lst)
 	out_df=out_df[["Chromosome","Start","End","Feature"]+lane_lst]
-	out_df.to_csv(outFilepath, sep='\t', index=False)
+
+	with open(outFilepath, 'w') as f:
+		header="#track color=0,0,0"
+		f.write(header+'\n')
+	out_df.to_csv(outFilepath, sep='\t', index=False,mode='a')
 
 if __name__=="__main__":
 	#filepath="/home/mitsuki/out/altorf/genome/fasta/GCF_000265365.1_ASM26536v1_chromosome.fna"
