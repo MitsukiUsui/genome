@@ -3,7 +3,7 @@ input="../speciespick/picked_assembly_summary.csv"
 
 array=(`awk -F, 'NR>1 {print $4}' ${input}`) 
 
-logDir="/data/mitsuki/out/altorf/genome/patternanalyze/log"
+logDir="/data/mitsuki/out/altorf/genome/property/log"
 
 for basename in ${array[@]}
 do
