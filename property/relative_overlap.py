@@ -1,3 +1,6 @@
+#!/home/mitsuki/.pyenv/versions/anaconda3-4.2.0/bin/python
+
+import sys
 from BCBio import GFF
 from Bio import SeqIO
 import Bio
@@ -144,7 +147,7 @@ def main(seqFilepath, gffFilepath, outFilepath):
 
 
 if __name__=="__main__":
-    seqFilepath="./data/GCF_000242335.1_ASM24233v3_chromosome.fna"
-    gffFilepath="./data/GCF_000242335.1_ASM24233v3_genomic.gff"
-    outFilepath="out.csv"
+    seqFilepath=sys.argv[1]
+    gffFilepath=sys.argv[2]
+    outFilepath=sys.argv[3] 
     main(seqFilepath, gffFilepath, outFilepath)

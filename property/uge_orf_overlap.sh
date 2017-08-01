@@ -9,5 +9,6 @@ for basename in ${array[@]}
 do
 	outlog=${logDir}/${basename}.sgeout
 	errlog=${logDir}/${basename}.sgeerr
-	qsub -S /bin/bash -q standard.q -o ${outlog} -e ${errlog} ./orf_overlap.sh ${basename}
+    cmd=./relative_overlap.sh
+	qsub -S /bin/bash -q standard.q -o ${outlog} -e ${errlog} ${cmd} ${basename}
 done
