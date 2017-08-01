@@ -6,6 +6,7 @@
 
 # ignore certain directory
 #/genomeshuffle/build/
+test/
 
 # And all the file types I'm interested in.
 !.gitignore
