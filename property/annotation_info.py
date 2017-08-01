@@ -3,7 +3,7 @@ from Bio import SeqIO
 import pandas as pd
 import numpy as np
 
-def main(lookupFilepath):
+def main(lookupFilepath, outFilepath):
     lookup_df=pd.read_csv(lookupFilepath)
     
     dct_lst=[]
@@ -57,8 +57,13 @@ def main(lookupFilepath):
             dct["cds_length"]=cdsLength
             dct["typical_length"]=typicalLength
             dct_lst.append(dct)
+    
+    out_df=pd.DataFrame(dct_lst)
+    out_df=out_df[["basename", "seq_name", "num_cds","num_typical", "seq_length", "cds_length", "typical_length" ]]
+    out_df.to_csv(outFilepath, index=False)
 
-
+            
 if __name__=="__main__":
     lookupFilepath="../speciespick/picked_assembly_summary_code.csv"
+    outFilepath="out.csv"
     main(lookupFilepath)
