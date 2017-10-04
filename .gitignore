@@ -8,7 +8,7 @@
 #/genomeshuffle/build/
 test/
 
-# And all the file types I'm interested in.
+# Add all the file types I'm interested in.
 !.gitignore
 !*.py
 !*.cpp
@@ -17,5 +17,8 @@ test/
 !*.ipynb
 !*.md
 !CMakeLists.txt
+
+# add all the filename I'm interested in.
+!target.csv
 
 .ipynb_checkpoints
