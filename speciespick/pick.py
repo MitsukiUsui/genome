@@ -1,6 +1,10 @@
 import pandas as pd
 import numpy as np
 
+import sys
+sys.path.append("/home/mitsuki/altorf/genome/db")
+from dbcontroller import DbController
+
 
 def get_df(filepath_lst, domain_lst):
     assert len(filepath_lst) == len(domain_lst)
@@ -10,21 +14,16 @@ def get_df(filepath_lst, domain_lst):
         df = pd.read_csv(filepath, delimiter='\t', skiprows=1, dtype="object")
         print("DONE : load {} species from {}".format(df.shape[0], filepath))
 
-        # filtering
         filtered_df = df[(df["refseq_category"] == "representative genome") & (df["assembly_level"] == "Complete Genome")]
-        taxid_set = set(filtered_df["taxid"]) # choose only one from one taxid
-
-        for taxid in taxid_set:
+        for _, row in filtered_df.iterrows():
             dct = {}
-            record = (filtered_df[filtered_df["taxid"] == taxid]).iloc[0, :]  # 先頭のレコードのみを取得
-
-            column_lst = ["# assembly_accession", "taxid", "organism_name", "asm_name", "ftp_path"]  # 残すカラムを選択
+            column_lst = ["taxid", "organism_name", "ftp_path"]
             for column in column_lst:
-                dct[column] = record[column]
-            dct["ftp_basename"] = record["ftp_path"].split('/')[-1]
+                dct[column] = row[column]
+            dct["ftp_basename"] = row["ftp_path"].split('/')[-1]
             dct["domain"] = domain
             dct_lst.append(dct)
-        print("DONE : pick {} species".format(len(taxid_set)))
+        print("DONE : pick {} species".format(filtered_df.shape[0]))
 
     return pd.DataFrame(dct_lst)
 
@@ -45,20 +44,30 @@ def add_genetic_code(df, taxFilepath):
     print("DONE : add genetic code")
     unique, counts = np.unique(ret_df["genetic_code"], return_counts=True)
     print("\t", dict(zip(unique, counts)))
-    
+
     return ret_df
 
 
-def main(filepath_lst, domain_lst, taxFilepath, outFilepath):
+def update_db(df, dbFilepath):
+    print("START: update {}".format(dbFilepath))
+    dc = DbController(dbFilepath)
+    insertCount = 0
+    for _, row in df.iterrows():
+        success = dc.insert_species(row["taxid"], row["domain"], row["organism_name"], row["ftp_path"], row["ftp_basename"], row["genetic_code"])
+        if success:
+            insertCount += 1
+    print("DONE:  insert {}/{} rows".format(insertCount, df.shape[0]))
+
+
+def main(filepath_lst, domain_lst, taxFilepath, dbFilepath):
     df = get_df(filepath_lst, domain_lst)
     df = add_genetic_code(df, taxFilepath)
-    df.to_csv(outFilepath, index=False)
-    print("DONE : output csv to {}".format(outFilepath))
+    update_db(df, dbFilepath)
 
 
 if __name__ == "__main__":
     filepath_lst = ["./data/archaea_assembly_summary.txt", "./data/bacteria_assembly_summary.txt"]
     domain_lst = ["archaea", "bacteria"]
     taxFilepath = "/data/mitsuki/data/taxonomy/nodes.processed"
-    outFilepath = "../target.csv"
-    main(filepath_lst, domain_lst, taxFilepath, outFilepath)
+    dbFilepath = "../db/altorf.db"
+    main(filepath_lst, domain_lst, taxFilepath, dbFilepath)

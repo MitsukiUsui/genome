@@ -16,9 +16,10 @@ test/
 !*.sh
 !*.ipynb
 !*.md
+!*.sql
 !CMakeLists.txt
 
 # add all the filename I'm interested in.
-!target.csv
+#!target.csv
 
 .ipynb_checkpoints
