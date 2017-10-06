@@ -11,7 +11,8 @@
 #include <seqan/stream.h>
 #include <seqan/arg_parse.h>
 
-#include <../../genomeshuffle/src/mygenome.h>
+#include "myutil.h"
+#include "myseqan.h"
 
 using std::cout;
 using std::cerr;
@@ -43,8 +44,8 @@ void classify(std::vector<int> & labels,
 //------------------------------------------------------------
 int fill_N(seqan::Dna5String & seq,
             std::mt19937 & mt){
-    char aa[4]={'T','C','A','G'};
-    double aaFreq[4]={0.25,0.25,0.25,0.25};
+    char base[4]={'T','C','A','G'};
+    double baseFreq[4]={0.25,0.25,0.25,0.25};
 
     int fillCount=0;
     for(unsigned i=0;i<seqan::length(seq);i++){
@@ -54,9 +55,9 @@ int fill_N(seqan::Dna5String & seq,
             double d=dist(mt);
             double cumSum=0;
             for(int idx = 0;idx < 4;idx++){
-                cumSum+=aaFreq[idx];
+                cumSum+=baseFreq[idx];
                 if(cumSum>=d){
-                    seq[i]=aa[idx];
+                    seq[i]=base[idx];
                     break;
                 }
             }
@@ -81,12 +82,7 @@ void split_fasta(seqan::StringSet<seqan::CharString> const & outFilepaths,
     std::random_device rd;
     std::mt19937 mt(rd());
 
-    //output log
-    std::ofstream ofs(seqan::toCString(logFilepath));
-    if (!ofs){
-        cerr<<"ERROR: Could not open "<<logFilepath<<endl;;
-        exit(1);
-    }
+    Logger logger(seqan::toCString(logFilepath));
 
     for(unsigned label=0;label<2;label++){
         //open file
@@ -119,8 +115,12 @@ void split_fasta(seqan::StringSet<seqan::CharString> const & outFilepaths,
                 }
 
                 std::string legend = (label==0 ? "chromosome" : "plasmid");
-                ofs<<outFilepaths[label]<<",\""<<ids[i]<<"\","<<legend<<","<<seqan::length(seqs[i])<<endl;
-                cout<<"DONE: output \""<<ids[i]<<"\" to "<<legend<<endl;
+
+                logger<<std::string(seqan::toCString(outFilepaths[label]))
+                      <<std::string(seqan::toCString(ids[i]))
+                      <<legend
+                      <<seqan::length(seqs[i]);
+                logger.flush();
             }
         }
     }
@@ -185,5 +185,7 @@ int main(int argc, char ** argv){
 
     //split fasta into 2 outFilepaths
     split_fasta(outFilepaths, ids, seqs, labels, convertFlag, logFilepath);
+    cout<<"DONE: split"<<endl;
+
     return 0;
 }

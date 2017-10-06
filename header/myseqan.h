@@ -9,9 +9,6 @@
 #include <seqan/gff_io.h>
 #include <seqan/stream.h>
 
-#include "geneticcode.h"
-#include "cdss.h"
-
 
 //------------------------------------------------------------
 //input:  filepath (path to fasta file)
