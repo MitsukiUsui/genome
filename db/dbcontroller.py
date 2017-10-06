@@ -64,9 +64,8 @@ class DbController:
         else:
             return None
 
-    def mark_as_done(self, taxid, process):
+    def mark_as_done(self, taxid_lst, process):
         assert process in ["download", "preprocess", "shuffle", "coverage"]
-        query = 'UPDATE flow SET {}=1 WHERE taxid=?'.format(process)
-        arg = (taxid, )
-        success = self.execute(query, arg)
+        query = 'UPDATE flow SET {}=1 WHERE taxid in ({})'.format(process, ','.join([str(taxid) for taxid in taxid_lst]))
+        success = self.execute(query)
         return success

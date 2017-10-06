@@ -46,7 +46,7 @@ def main(dbFilepath):
         successCount += wget_helper(outFilepath, ftpFilepath)
 
         if successCount == 3:
-            dc.mark_as_done(taxid, "download")
+            dc.mark_as_done([taxid], "download")
         else:
             print("ERROR: download only {} files".format(successCount))
 
