@@ -22,6 +22,9 @@ find_package (SeqAn REQUIRED)
 include_directories (${SEQAN_INCLUDE_DIRS})
 include_directories (/Users/mitsuki/sandbox/genome/header)
 
+#Add additional include directories.
+include_directories (/home/mitsuki/altorf/genome/header)
+
 # Add definitions set by find_package (SeqAn).
 add_definitions (${SEQAN_DEFINITIONS})
 
