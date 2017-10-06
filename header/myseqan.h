@@ -1,5 +1,5 @@
-#ifndef MYGENOME_H_
-#define MYGENOME_H_
+#ifndef MYSEQAN_H_
+#define MYSEQAN_H_
 
 #include <iostream>
 #include <cassert>
@@ -98,4 +98,4 @@ void write_gff(seqan::String<seqan::GffRecord> & records,  TFilepath const & fil
 }/*}}}*/
 
 
-#endif //MYGENOME_H_
+#endif //MYSEQAN_H_
