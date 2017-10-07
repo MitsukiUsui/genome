@@ -1,18 +1,12 @@
-import subprocess
 import sys
 
-sys.path.append("/home/mitsuki/altorf/genome/db")
+sys.path.append("/home/mitsuki/altorf/genome/helper/")
 from dbcontroller import DbController
+from myutil import myrun
 
-
-def wget_helper(outFilepath, ftpFilepath):
-    cmd = "wget -q -O {} {}".format(outFilepath, ftpFilepath)
-    try:
-        subprocess.run(cmd.split(), check=True)
-    except subprocess.CalledProcessError as e:
-        print(e)
-        return False
-    return True
+"""
+!!!UNTESTED with myrun function!!!
+"""
 
 
 def main(dbFilepath):
@@ -20,35 +14,30 @@ def main(dbFilepath):
     taxid_lst = dc.get_target("download")
     print("START: download {} species from RefSeq".format(len(taxid_lst)))
 
-    prefix_lst = ["_genomic.fna.gz", "_genomic.gff.gz", "_cds_from_genomic.fna.gz"]
     for _, taxid in enumerate(taxid_lst):
         print("START: taxid={} ({}/{})".format(taxid, _ + 1, len(taxid_lst)))
-
-        successCount = 0
         row = dc.get_row(taxid)
 
-        # genomic.fna
-        filename = row["ftp_basename"] + "_genomic.fna.gz"
-        outFilepath = "/data/mitsuki/data/refseq/genomic_fna/" + filename
-        ftpFilepath = row["ftp_path"] + "/" + filename
-        successCount += wget_helper(outFilepath, ftpFilepath)
+        directory_lst = ["/data/mitsuki/data/refseq/genomic_fna",
+                         "/data/mitsuki/data/refseq/genomic_gff",
+                         "/data/mitsuki/data/refseq/cds_from_genomic"]
+        suffix_lst = ["_genomic.fna.gz",
+                      "_genomic.gff.gz",
+                      "_cds_from_genomic.fna.gz"]
 
-        # genomic.gff
-        filename = row["ftp_basename"] + "_genomic.gff.gz"
-        outFilepath = "/data/mitsuki/data/refseq/genomic_gff/" + filename
-        ftpFilepath = row["ftp_path"] + "/" + filename
-        successCount += wget_helper(outFilepath, ftpFilepath)
+        for directory, suffix in zip(directory_lst, suffix_lst):
+            filename = row["ftp_basename"] + suffix
+            outFilepath = directory + "/" + filename
+            ftpFilepath = row["ftp_path"] + "/" + filename
+            cmd = "wget -q -O {} {}".format(outFilepath, ftpFilepath)
+            success = myrun(cmd)
+            if (not(success)):
+                break
 
-        # genomic.gff
-        filename = row["ftp_basename"] + "_cds_from_genomic.fna.gz"
-        outFilepath = "/data/mitsuki/data/refseq/cds_from_genomic/" + filename
-        ftpFilepath = row["ftp_path"] + "/" + filename
-        successCount += wget_helper(outFilepath, ftpFilepath)
-
-        if successCount == 3:
+        if success:
             dc.mark_as_done([taxid], "download")
         else:
-            print("ERROR: download only {} files".format(successCount))
+            print("ERROR: {}".format(cmd))
 
 
 if __name__ == "__main__":
