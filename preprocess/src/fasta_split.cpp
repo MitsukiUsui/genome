@@ -119,7 +119,8 @@ void split_fasta(seqan::StringSet<seqan::CharString> const & outFilepaths,
                 logger<<std::string(seqan::toCString(outFilepaths[label]))
                       <<std::string(seqan::toCString(ids[i]))
                       <<legend
-                      <<seqan::length(seqs[i]);
+                      <<seqan::length(seqs[i])
+                      <<fillCount;
                 logger.flush();
             }
         }

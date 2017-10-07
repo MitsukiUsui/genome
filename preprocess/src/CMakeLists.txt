@@ -22,7 +22,7 @@ find_package (SeqAn REQUIRED)
 include_directories (${SEQAN_INCLUDE_DIRS})
 
 #Add additional include directories.
-include_directories (/home/mitsuki/altorf/genome/header)
+include_directories (/home/mitsuki/altorf/genome/helper)
 
 # Add definitions set by find_package (SeqAn).
 add_definitions (${SEQAN_DEFINITIONS})
