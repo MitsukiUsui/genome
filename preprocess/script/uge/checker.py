@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append("/home/mitsuki/altorf/genome/db")
+sys.path.append("/home/mitsuki/altorf/genome/helper")
 from dbcontroller import DbController
 
 def main(dbFilepath):
