@@ -4,5 +4,5 @@ chrFilepath=/data/mitsuki/out/altorf/genome/fasta/${taxid}_chr.fna
 plsFilepath=/data/mitsuki/out/altorf/genome/fasta/${taxid}_pls.fna
 logFilepath=/data/mitsuki/out/altorf/genome/preprocess/split/${taxid}.log
 
-/home/mitsuki/altorf/genome/preprocess/build/fasta_split ${seqFilepath} ${chrFilepath} ${plsFilepath} ${logFilepath}
+time /home/mitsuki/altorf/genome/preprocess/build/fasta_split ${seqFilepath} ${chrFilepath} ${plsFilepath} ${logFilepath}
 
