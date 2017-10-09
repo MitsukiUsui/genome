@@ -8,11 +8,11 @@
 #define SEQAN_ENABLE_DEBUG 1
 
 #include <seqan/arg_parse.h>
-#include "mygenome.h"
+#include "myseqan.h"
 #include "myutil.h"
 
-//#include "/Users/mitsuki/sandbox/genome/genomeshuffle/src/mygenome.h"
-//#include "/Users/mitsuki/sandbox/genome/genomeshuffle/src/myutil.h"
+#include "geneticcode.h"
+#include "cdss.h"
 
 
 using std::cout;
