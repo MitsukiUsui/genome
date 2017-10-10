@@ -8,6 +8,8 @@
 #/genomeshuffle/build/
 test/
 cmake-build-debug/
+sandbox/
+googletest-release-1.8.0/
 
 # Add all the file types I'm interested in.
 !.gitignore
