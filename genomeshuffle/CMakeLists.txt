@@ -2,6 +2,7 @@
 cmake_minimum_required (VERSION 3.0.0)
 
 SET(CMAKE_CXX_COMPILER /usr/local/bin/g++)
+SET(CMAKE_CXX_STANDARD 14)
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build)
 
 # Name of project and that it is C++ only.
