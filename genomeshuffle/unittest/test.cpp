@@ -79,32 +79,32 @@ TEST_F(GeneticCodeTest, test_codon_freq) {
     seqan::Dna5String seq1 = "TCTTCC";
     seqan::Dna5String seq2 = "TCTTCA";
 
-    ASSERT_EQ(gc.get_freq(codonId1), 0);
-    ASSERT_EQ(gc.get_freq(codonId2), 0);
-    ASSERT_EQ(gc.get_freq(codonId3), 0);
-    ASSERT_EQ(gc.get_freq(codonId4), 0);
+    ASSERT_EQ(gc.get_frequency(codonId1), 0);
+    ASSERT_EQ(gc.get_frequency(codonId2), 0);
+    ASSERT_EQ(gc.get_frequency(codonId3), 0);
+    ASSERT_EQ(gc.get_frequency(codonId4), 0);
 
     gc.update_count(seq1);
 
-    ASSERT_EQ(gc.get_freq(codonId1), 0);
-    ASSERT_EQ(gc.get_freq(codonId2), 0);
-    ASSERT_EQ(gc.get_freq(codonId3), 0);
-    ASSERT_EQ(gc.get_freq(codonId4), 0);
+    ASSERT_EQ(gc.get_frequency(codonId1), 0);
+    ASSERT_EQ(gc.get_frequency(codonId2), 0);
+    ASSERT_EQ(gc.get_frequency(codonId3), 0);
+    ASSERT_EQ(gc.get_frequency(codonId4), 0);
 
     gc.calc_freq();
 
-    ASSERT_EQ(gc.get_freq(codonId1), 0.5);
-    ASSERT_EQ(gc.get_freq(codonId2), 0.5);
-    ASSERT_EQ(gc.get_freq(codonId3), 0);
-    ASSERT_EQ(gc.get_freq(codonId4), 0);
+    ASSERT_EQ(gc.get_frequency(codonId1), 0.5);
+    ASSERT_EQ(gc.get_frequency(codonId2), 0.5);
+    ASSERT_EQ(gc.get_frequency(codonId3), 0);
+    ASSERT_EQ(gc.get_frequency(codonId4), 0);
 
     gc.update_count(seq2);
     gc.calc_freq();
 
-    ASSERT_EQ(gc.get_freq(codonId1), 0.5);
-    ASSERT_EQ(gc.get_freq(codonId2), 0.25);
-    ASSERT_EQ(gc.get_freq(codonId3), 0.25);
-    ASSERT_EQ(gc.get_freq(codonId4), 0);
+    ASSERT_EQ(gc.get_frequency(codonId1), 0.5);
+    ASSERT_EQ(gc.get_frequency(codonId2), 0.25);
+    ASSERT_EQ(gc.get_frequency(codonId3), 0.25);
+    ASSERT_EQ(gc.get_frequency(codonId4), 0);
 }
 
 TEST_F(GeneticCodeTest, test_synonymous_sub){

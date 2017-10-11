@@ -37,5 +37,5 @@ add_definitions (${SEQAN_DEFINITIONS})
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SEQAN_CXX_FLAGS}")
 
 # Add executable and link against SeqAn dependencies.
-add_executable (shuffle_genome src/shuffle_genome.cpp)
+add_executable (shuffle_genome src/shuffle_genome.cpp src/geneticcode.h)
 target_link_libraries (shuffle_genome ${SEQAN_LIBRARIES})
