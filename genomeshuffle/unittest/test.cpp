@@ -8,6 +8,7 @@
 #include <seqan/basic.h>
 #include <seqan/seq_io.h>
 
+#include "shuffle_genome.h"
 #include "myseqan.h"
 
 #define SEQAN_ENABLE_DEBUG 1
@@ -55,3 +56,67 @@ TEST(seqan, test_length) {
     std::string seq_str = "NNN";
     ASSERT_EQ(seqan::length(seq_str), 3);
 }
+
+seqan::GffRecord create_gffRecord(seqan::CharString ref,
+                                  int beginPos,
+                                  int endPos,
+                                  char strand) {
+    seqan::GffRecord gff;
+    gff.type = "CDS";
+    gff.ref=ref;
+    gff.beginPos=beginPos;
+    gff.endPos=endPos;
+    gff.strand=strand;
+    return gff;
+}
+
+TEST(genome_shuffle, test_classify_gff) {
+    seqan::String<seqan::CharString> seqIds;
+    seqan::appendValue(seqIds, "seq1");
+    seqan::appendValue(seqIds, "seq2");
+
+    seqan::StringSet<seqan::DnaString> seqs;
+    seqan::appendValue(seqs, "ATGC");
+    seqan::appendValue(seqs, "AAAA");
+
+    seqan::String<seqan::GffRecord> gffs;
+    seqan::appendValue(gffs, create_gffRecord("seq1", 0, 99, '+'));
+
+    //WRITE ME
+    ASSERT_EQ(0, 1);
+}
+
+TEST(genome_shuffle, test_get_shuffle_region) {
+    seqan::String<seqan::GffRecord> gffs;
+    seqan::appendValue(gffs, create_gffRecord("seq1", 3, 12, '+'));
+//    seqan::appendValue(gffs, create_gffRecord("seq2", 0, 12, '+'));
+//    seqan::appendValue(gffs, create_gffRecord("seq2", 7, 19, '+'));
+
+    std::vector<int> gffLabels(seqan::length(gffs), 0);
+
+    seqan::String<seqan::CharString> seqIds;
+    seqan::StringSet<seqan::Dna5String> seqs;
+    read_fasta(seqIds, seqs, "/Users/mitsuki/sandbox/genome/genomeshuffle/unittest/test.fasta");
+
+    int shuffleMode[2] = {1, 3};
+    std::vector<ShuffleRegion> shuffleRegions;
+    get_shuffle_region(shuffleRegions, shuffleMode, seqIds, seqs, gffLabels, gffs);
+
+    ASSERT_EQ(shuffleRegions.size(), 3);
+
+    ASSERT_TRUE(shuffleRegions[0].seqId == "seq1");
+    ASSERT_EQ(shuffleRegions[0].start, 0);
+    ASSERT_EQ(shuffleRegions[0].end, 3);
+    ASSERT_EQ(shuffleRegions[0].shuffleMode, 1);
+
+    ASSERT_TRUE(shuffleRegions[1].seqId == "seq1");
+    ASSERT_EQ(shuffleRegions[1].start, 6);
+    ASSERT_EQ(shuffleRegions[1].end, 9);
+    ASSERT_EQ(shuffleRegions[1].shuffleMode, 3);
+
+    ASSERT_TRUE(shuffleRegions[2].seqId == "seq1");
+    ASSERT_EQ(shuffleRegions[2].start, 9);
+    ASSERT_EQ(shuffleRegions[2].end, 12);
+    ASSERT_EQ(shuffleRegions[2].shuffleMode, 1);
+}
+
