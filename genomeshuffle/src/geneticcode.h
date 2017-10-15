@@ -22,7 +22,7 @@ class GeneticCode {
     int aaIndex[22] = {};//1 stop, 20 aa, 1 sentinal
 
     void __GeneticCode(std::string str);
-
+    void update_freq();
 
 public:
     std::string geneticCode_str;
@@ -51,19 +51,8 @@ public:
 
     void clear_count();
 
-    //------------------------------------------------------------
-    //update codonCount according to seq(length multiple of 3)
-    //------------------------------------------------------------
-    void update_count(seqan::Dna5String &seq);
+    template<typename TSeq> void update_count(TSeq const &seq);
 
-    //------------------------------------------------------------
-    //update codonFreq accorging to codon count
-    //------------------------------------------------------------
-    void calc_freq();
-
-    //------------------------------------------------------------
-    //random inplace synonymous substitution, according to codonFreq.
-    //------------------------------------------------------------
     template<typename TSeq>
     void synonymous_sub(TSeq &codon, std::mt19937 &mt) const;
 
@@ -143,6 +132,8 @@ void GeneticCode::__GeneticCode(std::string str) {
         aaToCodon[aaBucket[aaId]++] = codonId;
     }
 }
+
+
 
 template<typename TSeq>
 inline int GeneticCode::codon_encode(TSeq const &codon) const {/*{{{*/
@@ -233,20 +224,23 @@ void GeneticCode::clear_count() {/*{{{*/
         codonCount[i] = 0;
         codonFreq[i] = 0;
     }
+    update_freq();
 }/*}}}*/
 
-void GeneticCode::update_count(seqan::Dna5String &seq) {/*{{{*/
+template<typename TSeq>
+void GeneticCode::update_count(TSeq const &seq) {/*{{{*/
     assert(seqan::length(seq) % 3 == 0);
     int aaLength = seqan::length(seq) / 3;
     for (int i = 0; i < aaLength; i++) {
-        seqan::Infix<seqan::Dna5String>::Type codon = seqan::infix(seq, 3 * i, 3 * (i + 1));
+        seqan::Dna5String codon = seqan::infix(seq, 3 * i, 3 * (i + 1));
         int codonId = codon_encode(codon);
         if (codonId != -1)
             codonCount[codonId]++;
     }
+    update_freq();
 }/*}}}*/
 
-void GeneticCode::calc_freq() {/*{{{*/
+void GeneticCode::update_freq() {/*{{{*/
     for (int aaId = 0; aaId < 21; aaId++) {
         //calculate count sum
         int countSum = 0;
