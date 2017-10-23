@@ -1,4 +1,6 @@
-class Phase:
+class PhaseController:
+    phase_lst = ["+0", "+1", "+2", "-0", "-1", "-2"]
+
     def __add(self,p):
         i = int(p) + 1
         if p[0]=='+':
@@ -28,10 +30,9 @@ class Phase:
     
     def __init__(self):       
         #define phase and its operation notation.
-        self.phase_lst=["+0", "+1", "+2", "-0", "-1", "-2"]
         self.ph2op={"+0":[], "+1":['a'], "+2":['a', 'a'],
                     "-0":['r'], "-1":['a', 'r'], "-2":['a', 'a', 'r']}
-        
+
         self.operate_dct={}
         for p1 in self.phase_lst:
             for p2 in self.phase_lst:

@@ -3,148 +3,149 @@
 import sys
 from BCBio import GFF
 from Bio import SeqIO
-import Bio
 import pandas as pd
-import numpy as np
 
-from orf_overlap import get_orf_df
+from orfcoverage.orf_overlap import create_orf_df
+from orfcoverage.phase import PhaseController
 
-def get_pos_lst(cds_lst, orf_df):
+class Interval:
+    def __init__(self, intervalId, start, end, phase):
+        assert phase in PhaseController.phase_lst
+        assert (end - start) % 3 == 0
+
+        self.intervalId = intervalId
+        self.start = start
+        self.end = end
+        self.phase = phase
+
+def create_orf_interval_lst(orf_df, thres):
+    filtered_df = orf_df[orf_df["length"] >= thres]
+    orfInterval_lst = []
+    for orfId, row in filtered_df.iterrows():
+        phase = PhaseController.phase_lst[row["lane"]]
+        interval = Interval(orfId, row["start"], row["end"], phase)
+        orfInterval_lst.append(interval)
+        
+def create_cds_interval_lst(gffFilepath, seqId):
+    cdsId = 0
+    cdsInterval_lst = []
+    with open(gffFilepath) as f:
+        for rec in GFF.parse(f, target_lines=1):
+            assert len(rec.features)==1
+            feature = rec.fetures[0]
+            if (rec.id == seqId) and (feature.type == "CDS"): #if this is targeted cds
+                start = feature.location.start
+                end = feature.location.end
+                length = end - start
+                if (length >= 6) and (length % 3 == 0): # if this is targeted typical cds
+                    lane = (start % 3) if (feature.location.strand == 1) else (3 + (start % 3))
+                    phase = PhaseController.phase_lst[lane]
+                    interval = Interval(cdsId, start, end, phase)
+                    cdsInterval_lst.append(interval)
+                    cdsId += 1
+
+def count_relative_overlap(cdsInterval_lst, orfInterval_lst):
     """
-    given cds_lst and orf_df, return sorted pos_lst
-    format: (pos, isStart, type, name, lane)
-        type:0 for cds, 1 for orf
-    """
-    pos_lst=[] 
-
-    #update pos_lst with cds_lst
-    for cdsId,cds in enumerate(cds_lst):
-        assert len(cds.features)==1
-        start=int(cds.features[0].location.start)
-        end=int(cds.features[0].location.end)
-        lane=start%3
-        if cds.features[0].location.strand==-1:
-            lane+=3
-                    
-        length=end-start
-        if length%3==0 and length>=6:  #if "typical cds"
-            pos_lst.append((start, True, 0, cdsId, lane))
-            pos_lst.append((end, False, 0, cdsId, lane))
-
-    #update pos_lst with df
-    for orfId,row in orf_df.iterrows():
-        pos_lst.append((row["start"], True, 1, orfId, row["lane"]))
-        pos_lst.append((row["end"], False, 1, orfId, row["lane"]))
-                
-    pos_lst=sorted(pos_lst, key=lambda x: x[0])
-    return pos_lst
-    
-
-def get_overlap_dctdct(pos_lst):
-    """
-    given sorted pos_lst, return overlap_dctdct
-    format: key = (orfId, cdsId), value = {ostart, oend, relLane}
-    
+    :param orfInterval_lst:
+    :param cdsInterval_lst:
+    :return: relativeOverlap_dct: keys(phase_lst+"intergenic"), val(count in bp)
     """
 
-    def get_relative_lane(cdsLane, orfLane):
-        dct={}
-        dct[0]=["+1", "+2", "+3", "-1", "-2", "-3"]
-        dct[1]=["+3", "+1", "+2", "-3", "-1", "-2"]
-        dct[2]=["+2", "+3", "+1", "-2", "-3", "-1"]
-        dct[3]=["-1", "-3", "-2", "+1", "+3", "+2"]
-        dct[4]=["-2", "-1", "-3", "+2", "+1", "+3"]
-        dct[5]=["-3", "-2", "-1", "+3", "+2", "+1"]
-        return dct[cdsLane][orfLane]
-    
-    overlap_dctdct={}
-    proCds_dct= {} #dictionary of cdss in process (key: cdsId, value: naive lane)
-    proOrf_dct={}  #dictionary of orfs in process (key: orfId, value: naive lane)
-    for pos in pos_lst:
-        if pos[2]==0:#if CDS
-            cdsId=pos[3]
-            cdsLane=pos[4]
-            if pos[1]:#if start
-                proCds_dct[cdsId]=cdsLane  #update processing CDS dictionary
-                for orfId, orfLane in proOrf_dct.items():  #add new overlap object with orfs in proOrf_dct
-                    key=(orfId, cdsId)
-                    overlap_dctdct[key]={}
-                    overlap_dctdct[key]["ostart"]=pos[0]
-                    overlap_dctdct[key]["relLane"]=get_relative_lane(cdsLane, orfLane)                   
-            else:#if last
-                del proCds_dct[cdsId]  #delete from processing CDS dicrionary
-                for orfId, _ in proOrf_dct.items():
-                    key=(orfId, cdsId)
-                    overlap_dctdct[key]["oend"]=pos[0]
+    class Switch:
+        def __init__(self, interval, isStart, type):
+            self.intervalId = interval.intervalId
+            self.isStart = isStart
+            self.position = (interval.start) if (isStart) else (interval.end)
+            self.phase = interval.phase
+            self.type = type
 
-        elif pos[2]==1:  #if orf
-            orfId=pos[3]
-            orfLane=pos[4]
-            if pos[1]:  #if start
-                proOrf_dct[orfId]=orfLane
-                for cdsId, cdsLane in proCds_dct.items():
-                    key=(orfId, cdsId)
-                    overlap_dctdct[key]={}
-                    overlap_dctdct[key]["ostart"]=pos[0]
-                    overlap_dctdct[key]["relLane"]=get_relative_lane(cdsLane, orfLane)
-            else:  #if last
-                del proOrf_dct[orfId]  #delete from processing orf dicrionary
-                for cdsId, _ in proCds_dct.items():
-                    key=(orfId, cdsId)
-                    overlap_dctdct[key]["oend"]=pos[0]
-    return overlap_dctdct
-    
-    
-    
+    class Overlap:
+        def __init__(self, start, end, relativePhase):
+            assert relativePhase in (PhaseController.phase_lst + ["intergenic"])
+
+            self.start = start
+            self.end = end
+            self.relativePhase = relativePhase
+
+    #initialize switch
+    switch_lst=[]
+    for interval_lst, type in zip((cdsInterval_lst, orfInterval_lst), ("cds", "orf")):
+        for interval in interval_lst:
+            startSwitch = Switch(interval, isStart = True, type = type)
+            endSwitch = Switch(interval, isStart = False, type = type)
+            switch_lst.append(startSwitch)
+            switch_lst.append(endSwitch)
+    switch_lst = sorted(switch_lst, key = lambda x: x.position)
+
+    inProcessCds_dct = {} #(key: id, value: phase)
+    inProcessOrf_dct = {} #(key: id, value: phase)
+    overlap_dct = {} #(key: (cdsId, orfId), value: overlap)
+    phaseController = PhaseController()
+
+    for switch in switch_lst:
+        if switch.type == "cds":
+            cdsId = switch.intervalId
+            cdsPhase = switch.phase
+            if switch.isStart:
+                inProcessCds_dct[cdsId] = cdsPhase
+                for orfId, orfPhase in inProcessOrf_dct.items():
+                    key = (cdsId, orfId)
+                    relativePhase = phaseController.relative(cdsPhase, orfPhase)
+                    overlap = Overlap(start = switch.position, end = switch.position, relativePhase = relativePhase)
+                    overlap_dct[key] = overlap
+            else:
+                del inProcessCds_dct[cdsId]
+                for orfId, _ in inProcessOrf_dct.items():
+                    key = (cdsId, orfId)
+                    overlap_dct[key].end = switch.position
+        elif switch.type == "orf":
+            orfId = switch.intervalId
+            orfPhase = switch.phase
+            if switch.isStart:
+                inProcessOrf_dct[orfId] = orfPhase
+                for cdsId, cdsPhase in inProcessCds_dct.items():
+                    key = (cdsId, orfId)
+                    relativePhase = phaseController.relative(cdsPhase, orfPhase)
+                    overlap = Overlap(start = switch.position, end = switch.position, relativePhase = relativePhase)
+                    overlap_dct[key] = overlap
+            else:
+                del inProcessOrf_dct[orfId]
+                for cdsId, _ in inProcessCds_dct.items():
+                    key = (cdsId, orfId)
+                    overlap_dct[key].end = switch.position
+
+    #return overlapCounter_dct
+    overlapCount_dct = {"intergenic" : 0}
+    for phase in PhaseController.phase_lst:
+        overlapCount_dct[phase] = 0
+    for _, overlap in overlap_dct.items():
+        overlapCount_dct[overlap.relativePhase] = overlap.end - overlap.start
+    return overlapCount_dct
+
+
 def main(seqFilepath, gffFilepath, outFilepath):
-    # load fasta
     seqRec_lst=[]
-    seqName_lst=[]
     for seqRec in SeqIO.parse(seqFilepath, "fasta"):
         seqRec_lst.append(seqRec)
-        seqName_lst.append(seqRec.id)
-    print("LOADED {} seqs from {}".format(len(seqRec_lst), seqFilepath))
+    print("DONE: load {} seqs from {}".format(len(seqRec_lst), seqFilepath))
 
-    # load gff and distribute CDS
-    cds_lstlst=[[] for _ in range(len(seqName_lst))]
-    with open(gffFilepath) as f:
-        for rec in GFF.parse(f,target_lines=1):
-            assert len(rec.features)==1
-            if rec.features[0].type=="CDS":
-                try:
-                    idx=seqName_lst.index(rec.id)
-                    cds_lstlst[idx].append(rec)
-                except ValueError:
-                    pass # corresponding sequence does not exists in seqRec_lst
-
-    
-    for idx, seqName in enumerate(seqName_lst):
-        print("\tLOADED {0} CDSs in {1}".format(len(cds_lstlst[idx]), seqName))
-
-    
+    dct_lst = []
     thres_lst=list(range(50, 1000+1, 50))
-    columns=["+1", "+2", "+3", "-1", "-2", "-3"]
-    out_mat=np.zeros((len(thres_lst), len(columns))).astype(int)
+    for seqRec in seqRec_lst:
+        print("START: process {}".format(seqRec.id))
+        orf_df = create_orf_df(seqRec.seq)
+        cdsInterval_lst = create_cds_interval_lst(gffFilepath, seqRec.id)
 
-    for seqRec, cds_lst, seqName in zip(seqRec_lst, cds_lstlst, seqName_lst):
-        orf_df=get_orf_df(seqRec)
-        
-        for i, thres in enumerate(thres_lst):
-            filtered_df=orf_df[orf_df["length"]>=thres]
-            pos_lst=get_pos_lst(cds_lst, filtered_df)
-            overlap_dctdct=get_overlap_dctdct(pos_lst)
-            
-            for _, dct in overlap_dctdct.items():
-                out_mat[i, columns.index(dct["relLane"])] += (dct["oend"]-dct["ostart"])
-        print("\tDONE with {}".format(seqName))
-            
+        for thres in thres_lst:
+            orfInterval_lst = create_orf_interval_lst(orf_df, thres)
+            overlapCount_dct = count_relative_overlap(cdsInterval_lst, orfInterval_lst)
+            overlapCount_dct["thres"] = thres
+            overlapCount_dct["id"] = seqRec.id
+            dct_lst.append(overlapCount_dct)
+            print("\nDONE: process with thres = {}".format(thres))
 
-    out_df=pd.DataFrame(out_mat, columns=columns)
-    out_df["thres"]=thres_lst
-    out_df=out_df[["thres"]+columns]
+    out_df = pd.DataFrame(dct_lst)
     out_df.to_csv(outFilepath, index=False)
-    print("OUTPUT to {}".format(outFilepath))
-
 
 if __name__=="__main__":
     seqFilepath=sys.argv[1]

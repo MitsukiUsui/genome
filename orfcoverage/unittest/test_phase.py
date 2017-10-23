@@ -1,19 +1,19 @@
 from unittest import TestCase
-from orfcoverage.phase import Phase
+from orfcoverage.phase import PhaseController
 
 class Test_phase(TestCase):
 
     def test_operate(self):
-        phase = Phase()
-        self.assertEqual(phase.operate("+1", "-1"), "-2")
+        pc = PhaseController()
+        self.assertEqual(pc.operate("+1", "-1"), "-2")
 
     def test_revopes(self):
         """
         this is the definition of revops
         """
 
-        phase = Phase()
-        for p in phase.phase_lst:
-            for ops in phase.phase_lst:
-                revops = phase.revops(ops)
-                self.assertEqual(phase.operate(phase.operate(p, ops), revops), p)
+        pc = PhaseController()
+        for p in PhaseController.phase_lst:
+            for ops in PhaseController.phase_lst:
+                revops = pc.revops(ops)
+                self.assertEqual(pc.operate(pc.operate(p, ops), revops), p)
