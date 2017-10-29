@@ -296,7 +296,7 @@ seqan::String<seqan::AminoAcid> GeneticCode::translate(TSeq seq) const {/*{{{*/
     seqan::String<seqan::AminoAcid> seq_aa;
     seqan::resize(seq_aa, aaLength);
     for (int i = 0; i < aaLength; i++) {
-        seqan::Infix<seqan::Dna5String>::Type codon = seqan::infix(seq, 3 * i, 3 * (i + 1));
+        seqan::Dna5String codon = seqan::infix(seq, 3 * i, 3 * (i + 1));
         seq_aa[i] = aa_decode(codonToAa[codon_encode(codon)]);
     }
     return seq_aa;

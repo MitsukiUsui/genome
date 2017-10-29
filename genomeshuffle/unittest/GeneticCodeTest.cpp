@@ -2,14 +2,14 @@
 // Created by 薄井光生 on 2017/10/10.
 //
 
+#define SEQAN_ENABLE_DEBUG 1
+
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <string>
 #include <map>
 #include "geneticcode.h"
 #include "myutil.h"
-
-#define SEQAN_ENABLE_DEBUG 1
 
 using std::cout;
 using std::cerr;
@@ -135,4 +135,13 @@ TEST_F(GeneticCodeTest, test_synonymous_sub){
     ASSERT_TRUE(codonCount[ids[1]]>=200 && codonCount[ids[1]]<=300);//Expected 250
     ASSERT_TRUE(codonCount[ids[2]]>=200 && codonCount[ids[2]]<=300);//Expected 250
     ASSERT_EQ(codonCount[ids[3]], 0);
+}
+
+TEST_F(GeneticCodeTest, test_is_stop_codon) {
+    seqan::DnaString codon;
+    codon = "TAA";
+    ASSERT_TRUE(gc.is_stop_codon(codon));
+
+    codon = "AAA";
+    ASSERT_FALSE(gc.is_stop_codon(codon));
 }

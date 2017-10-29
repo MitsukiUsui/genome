@@ -26,7 +26,7 @@ void set_parser(seqan::ArgumentParser &parser, int argc, char **argv) {/*{{{*/
     seqan::addUsageLine(parser,
                         "\"seqFilepath\" \"gffFilepath\"");
     seqan::addDescription(parser,
-                          "This program . " //TODO
+                          "This program shuffle genomes preseving CDS sequences."
     );
     addArgument(parser, seqan::ArgParseArgument(
             seqan::ArgParseArgument::INPUT_FILE, "seqFilepath"));
@@ -99,19 +99,18 @@ int main(int argc, char **argv) {
     //update GeneticCode with gffs
     //------------------------------------------------------------
     GeneticCode geneticCode(11);
-    std::vector<int> gffLabels(seqan::length(gffs), -1);
-    classify_gff(gffLabels, gffs, seqIds, seqs, geneticCode);
-    update_genetic_code(geneticCode, seqIds, seqs, gffLabels, gffs);
+    std::vector< std::vector<MyCDS> > myCDS_vecvec;
+
+
+    get_myCDS_vecvec(myCDS_vecvec, gffs, seqs, seqIds, geneticCode);
+    update_genetic_code(geneticCode, myCDS_vecvec, seqs);
 
     std::vector<ShuffleRegion> shuffleRegions;
-    get_shuffle_region(shuffleRegions, shuffleMode, seqIds, seqs, gffLabels, gffs);
+    get_shuffle_region(shuffleRegions, shuffleMode, seqs, myCDS_vecvec);
     cout << "DONE: find " << seqan::length(shuffleRegions) << " shuffle regions" << endl;
 
-    shuffle_genome(shuffleRegions, seqIds, seqs);
+    shuffle_genome(seqs, shuffleRegions, geneticCode);
 
-    //Calc codon composition for after genome shuffling
-
-    write_fasta(seqIds, seqs, outFilepath);
     cout << "DONE: output to " << outFilepath << endl;
     return 0;
 }

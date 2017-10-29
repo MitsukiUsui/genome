@@ -12,14 +12,11 @@
 #include <cassert>
 #include <random>
 
-#define SEQAN_ENABLE_DEBUG 1
-
 #include <seqan/arg_parse.h>
 #include "myseqan.h"
 #include "myutil.h"
-
 #include "geneticcode.h"
-
+#include "../unittest/lib/googletest-release-1.8.0/googletest/include/gtest/gtest.h"
 
 using std::cout;
 using std::cerr;
@@ -69,242 +66,382 @@ void shuffle_synonymous(TSeq &seq, GeneticCode const &gc, std::mt19937 &mt) {
     unsigned aaLength = bpLength / 3;
 
     for (unsigned i = 0; i < aaLength; i++) {
-        seqan::Infix<seqan::DnaString>::Type codon = seqan::infix(seq, 3 * i, 3 * (i + 1));
+        seqan::DnaString codon = seqan::infix(seq, 3 * i, 3 * (i + 1));
         gc.synonymous_sub(codon, mt);
+        for (unsigned j = 0; j < 3; j++) {
+            seq[3 * i + j] = codon[j];
+        }
     }
     return;
 }
 
+
+//------------------------------------------------------------
+// wrapper class for seqan GffRecord
+//------------------------------------------------------------
+class MyCDS {
+    FRIEND_TEST(genome_shuffle, test_classify);
+
+    seqan::GffRecord gff;
+    int label;
+    int phase = -1; //defined only if this CDS is typical
+
+    int classify(seqan::DnaString const &seq,
+                 GeneticCode const &geneticCode) {
+        if (gff.endPos > seqan::length(seq)) {
+            return 1;
+        }
+
+        int length = gff.endPos - gff.beginPos;
+        if (length < 6 | (length % 3) != 0) {
+            return 2;
+        }
+
+        seqan::Dna5String subSeq = seqan::infix(seq, gff.beginPos, gff.endPos);
+        if (gff.strand == '-') {
+            seqan::reverseComplement(subSeq);
+        }
+
+        for (unsigned i = 0; i < length; i++) {
+            if (subSeq[i] == 'N') {
+                return 3;
+            }
+        }
+
+        int aaLength = length / 3;
+        for (int i = 0; i < aaLength - 1; i++) {
+            seqan::Dna5String codon = seqan::infix(subSeq, 3 * i, 3 * (i + 1));
+            if (geneticCode.is_stop_codon(codon))
+                return 4;
+        }
+
+        seqan::Dna5String codon = seqan::infix(subSeq, 3 * (aaLength - 1), 3 * aaLength);
+        if (!geneticCode.is_stop_codon(codon)) {
+            return 5;
+        }
+        return 0;
+    }
+
+public:
+
+    MyCDS() {}
+
+    MyCDS(seqan::GffRecord const gff,
+          seqan::DnaString const seq,
+          GeneticCode const geneticCode) {
+        this->gff = gff;
+        this->label = classify(seq, geneticCode);
+        if (is_typical()) {
+            this->phase = get_start() % 3;
+        }
+    }
+
+    int get_start() const {
+        return gff.beginPos;
+    }
+
+    int get_end() const {
+        return gff.endPos;
+    }
+
+    int get_phase() const {
+        return phase;
+    }
+
+    bool is_typical() const {
+        return (label == 0) ? true : false;
+    }
+
+    bool is_forward() const {
+        return (gff.strand == '+') ? true : false;
+    }
+};
+
+void get_myCDS_vecvec(std::vector< std::vector<MyCDS> > &myCDS_vecvec,
+                      seqan::String<seqan::GffRecord> const &gffs,
+                      seqan::StringSet<seqan::DnaString> const &seqs,
+                      seqan::String<seqan::CharString> const &seqIds,
+                      GeneticCode const geneticCode) {
+
+    int numSeqs = seqan::length(seqs);
+    for (int seqIdx = 0; seqIdx < numSeqs; seqIdx++) {
+        std::vector<MyCDS> myCDS_vec;
+        myCDS_vecvec.push_back(myCDS_vec);
+    }
+
+    int numGffs = seqan::length(gffs);
+    for (int gffIdx = 0; gffIdx < numGffs; gffIdx++) {
+        seqan::GffRecord const gff = gffs[gffIdx];
+        if (gff.type == "CDS") {
+            int seqIdx = -1;
+            for (int i = 0; i < numSeqs; i++) {
+                if (gff.ref == seqIds[i]) {
+                    seqIdx = i;
+                    break;
+                }
+            }
+
+            if (seqIdx != -1) {
+                MyCDS myCDS = MyCDS(gff, seqs[seqIdx], geneticCode);
+                myCDS_vecvec[seqIdx].push_back(myCDS);
+            }
+        }
+    }
+}
 
 //============================================================
 //structure to convey shuffle command
 //============================================================
 struct ShuffleRegion {
-    seqan::CharString seqId;
-    int start;
-    int end;
-    bool isForward;
-    int shuffleMode;
+    int seqIdx = -1;
+    int start = -1;
+    int end = -1;
+    int shuffleMode = -1;
+    bool isForward = true; //only required for shuffleMode = 2,3
+    int phase = -1; //only required for shuffleMode = 2, 3
+};
 
-    ShuffleRegion(std::string seqId, int start, int end, bool isForward, int shuffleMode) {
-        this->seqId = seqId;
-        this->start = start;
-        this->end = end;
-        this->isForward = isForward;
-        this->shuffleMode = shuffleMode;
+class ShuffleRegionFactory {
+    bool inProcess = false;
+    int cdsIdxInProcess = -1;
+    std::vector<ShuffleRegion> shuffleRegions;
+
+public:
+    ShuffleRegionFactory() {}
+
+    void initIntergenic(int seqIdx, int start, int shuffleMode) {
+        assert(!inProcess);
+        inProcess = true;
+        ShuffleRegion shuffleRegion;
+        shuffleRegion.seqIdx = seqIdx;
+        shuffleRegion.start = start;
+        shuffleRegion.shuffleMode = shuffleMode;
+        shuffleRegions.push_back(shuffleRegion);
+    }
+
+    void completeIntergenic(int seqIdx, int end, int shuffleMode) {
+        assert(inProcess);
+        //some additional assertions
+
+        if (end > shuffleRegions[shuffleRegions.size() - 1].start) {
+            shuffleRegions[shuffleRegions.size() - 1].end = end;
+        } else {
+            shuffleRegions.pop_back();
+        }
+        inProcess = false;
+    }
+
+    void initGenic(int seqIdx, int tmpStart, MyCDS myCDS, int shuffleMode,
+                   int cdsIdx) { //tmpStart because we need to adjust to phase
+        assert(!inProcess);
+        inProcess = true;
+
+        ShuffleRegion shuffleRegion;
+        shuffleRegion.seqIdx = seqIdx;
+        shuffleRegion.shuffleMode = shuffleMode;
+
+        int start;
+        if (tmpStart % 3 == myCDS.get_phase()) {
+            start = tmpStart;
+        } else if (tmpStart % 3 < myCDS.get_phase()) {
+            start = tmpStart + (myCDS.get_phase() - tmpStart % 3);
+        } else if (tmpStart % 3 > myCDS.get_phase()) {
+            start = tmpStart + (3 + myCDS.get_phase() - tmpStart % 3);
+        }
+        assert(start % 3 == myCDS.get_phase());
+        shuffleRegion.start = start;
+
+        shuffleRegions.push_back(shuffleRegion);
+        cdsIdxInProcess = cdsIdx;
+    }
+
+    void completeGenic(int seqIdx, int tmpEnd, MyCDS myCDS, int shuffleMode, int cdsIdx) {
+        assert(inProcess);
+        assert(cdsIdx == cdsIdxInProcess);
+
+        int end;
+        if (tmpEnd % 3 == myCDS.get_phase()) {
+            end = tmpEnd;
+        } else if (tmpEnd % 3 < myCDS.get_phase()) {
+            end = tmpEnd - (3 + tmpEnd % 3 - myCDS.get_phase());
+        } else if (tmpEnd % 3 > myCDS.get_phase()) {
+            end = tmpEnd - (tmpEnd % 3 - myCDS.get_phase());
+        }
+        assert(end % 3 == myCDS.get_phase());
+
+        if (end > shuffleRegions[shuffleRegions.size() - 1].start) {
+            shuffleRegions[shuffleRegions.size() - 1].end = end;
+        } else {
+            shuffleRegions.pop_back();
+        }
+        cdsIdxInProcess = -1;
+        inProcess = false;
+    }
+
+    bool in_process() {
+        return inProcess;
+    }
+
+    std::vector<ShuffleRegion> get_shuffleRegions() {
+        return shuffleRegions;
     }
 };
 
-//template <typename TSeq>
-//void overwrite_region(TSeq & seq, ShuffleRegion const & sr, GeneticCode const & gc, std::mt19937 & mt){
-//	seqan::DnaString subseq=seqan::infix(seq, sr.start, sr.end);//create new DnaString object
-//	if(!sr.isForward){
-//		seqan::reverseComplement(subseq);
-//	}
-//
-//	switch (sr.mode){
-//		case 1:
-//			shuffle_base(subseq, mt);
-//			break;
-//		case 2:
-//			shuffle_codon(subseq, mt);
-//			break;
-//		case 3:
-//			shuffle_synonymous(subseq, gc, mt);
-//			break;
-//		default:
-//			cerr<<"ERROR: undefined shuffle mode "<<sr.mode<<endl;
-//			std::exit(1);
-//	}
-//
-//	if(!sr.isForward){
-//		seqan::reverseComplement(subseq);
-//	}
-//
-//	//overwrite
-//	seqan::replace(seq, sr.start, sr.end, subseq);
-//	return;
-//}
-
-
-
-//============================================================
-//shuffle genome according to cdss end report
-//according to cdss and shuffleMode, construct SuffleRegion instance and call overwrite_region() method
-//============================================================
-//template <typename TSeqs>
-//void shuffle_genome(TSeqs & seqs, CDSs const  & cdss, GeneticCode const & gc, int * shuffleMode){
-//	std::random_device rd;
-//	std::mt19937 mt(rd());
-//
-//	std::vector<int> shufflableTypes{0};
-//
-//	cout<<"\tSHUFFLE REPORT : "<<endl;
-//	for(unsigned refIdx=0; refIdx<seqan::length(seqs);refIdx++){
-//		int countShuffle[4] = { 0, 0, 0, 0 };
-//
-//		int endMax = 0;
-//		for (auto itr=cdss.cdss_vec[refIdx].begin(); itr!=cdss.cdss_vec[refIdx].end()-1; itr++){//skip last sentinel
-//			int		 start = itr->startPos;
-//			int		   end = itr->endPos;
-//			int		  type = itr->type;
-//			bool isForward = itr->isForward;
-//			int  startNext = (itr+1)->startPos;
-//
-//			assert(start<=startNext);//regions should be sorted
-//			//shuffle intergenic region
-//			if(shuffleMode[0] == 1){
-//				if (start > endMax){
-//					int shuffleStart=endMax;
-//					int shuffleEnd=start;
-//					ShuffleRegion sr(shuffleStart, shuffleEnd, true, 1);
-//					overwrite_region(seqs[refIdx], sr, gc, mt);
-//					countShuffle[1]+=(sr.end-sr.start);
-//				}
-//			}
-//			//shuffle genetic region
-//			if (shuffleMode[1] > 0){
-//				if (is_in(type, shufflableTypes)){
-//					int cand1 = start + 3 * ceil((double)(endMax - start) / 3);
-//					int cand2 = start + 3;
-//					int shuffleStart = std::max(cand1, cand2);
-//
-//					cand1 = end - 3 * ceil((double)(end - startNext) / 3);
-//					cand2 = end - 3;
-//					int shuffleEnd = std::min(cand1, cand2);
-//
-//					if(shuffleEnd > shuffleStart){
-//						ShuffleRegion sr(shuffleStart, shuffleEnd, isForward, shuffleMode[1]);
-//						overwrite_region(seqs[refIdx], sr, gc, mt);
-//						countShuffle[shuffleMode[1]]+=(sr.end-sr.start);
-//					}
-//				}
-//			}
-//			endMax=std::max(end, endMax);
-//		}
-//
-//		//calculate unshuffled region
-//		countShuffle[0] = seqan::length(seqs[refIdx]);
-//		for (int i = 1; i < 4; i++){
-//			countShuffle[0] -= countShuffle[i];
-//		}
-//		//shuffle report
-//		cout<<"\t\tREFIDX: "<<refIdx<<endl;
-//		cout<<"\t\t\tTotal: "<<seqan::length(seqs[refIdx])<<" bp."<<endl;
-//		for (int i = 0; i < 4; i++){
-//			cout << "\t\t\t\tmode" << i << " shuffled: " << countShuffle[i] << " bp." << endl;
-//		}
-//	}
-//}
-
-
 void update_genetic_code(GeneticCode &geneticCode,
-                         seqan::String<seqan::CharString> const &seqIds,
-                         seqan::StringSet<seqan::DnaString> const &seqs,
-                         std::vector<int> const &gffLabels,
-                         seqan::String<seqan::GffRecord> const &gffs) {
+                         std::vector<std::vector<MyCDS> > const myCDS_vecvec,
+                         seqan::StringSet<seqan::DnaString> const &seqs) {
 
-    assert (seqan::length(seqIds) == seqan::length(seqs));
-    int numSeqs = seqan::length(seqIds);
-    for (int i = 0; i < numSeqs; i++) {
-        seqan::CharString const seqId = seqIds[i];
-        seqan::DnaString const seq = seqs[i];
+    int numSeqs = seqan::length(seqs);
+    for (int seqIdx = 0; seqIdx < numSeqs; seqIdx++) {
+        seqan::DnaString const seq = seqs[seqIdx];
 
-        assert (seqan::length(gffLabels) == seqan::length(gffs));
-        int numGffs = seqan::length(gffs);
-
-        for (int j = 0; j < numGffs; j++) {
-            seqan::GffRecord const gff = gffs[j];
-            int gffLabel = gffLabels[j];
-
-            if (gff.ref == seqId && gffLabel == 0) {
-                int start = gff.beginPos;
-                int end = gff.endPos;
-                bool isForward = gff.phase == '+' ? true : false;
-
-                seqan::DnaString sub = seqan::infix(seq, start, end);
-                if (isForward) {
-                    geneticCode.update_count(sub);
-                } else {
+        for (MyCDS const myCDS : myCDS_vecvec[seqIdx]) {
+            if (myCDS.is_typical()) {
+                seqan::DnaString sub = seqan::infix(seq, myCDS.get_start() + 3, myCDS.get_end() - 3);
+                if (!myCDS.is_forward()) {
                     seqan::reverseComplement(sub);
-                    geneticCode.update_count(sub);
                 }
+                geneticCode.update_count(sub);
             }
         }
     }
-    return;
 }
 
-void classify_gff(std::vector<int> gffLabels,
-                  seqan::String<seqan::GffRecord> const &gffs,
-                  seqan::String<seqan::CharString> const &seqIds,
-                  seqan::StringSet<seqan::DnaString> const &seqs,
-                  GeneticCode const &geneticCode) {
+struct StateSwitch {
+    int cdsIdx;
+    int position;
+    bool isStart;
 
-    gffLabels.resize(seqan::length(gffs));
-    for (int label : gffLabels) {
-        label = -1;
+    StateSwitch(int cdsIdx, int position, bool isStart) {
+        this->cdsIdx = cdsIdx;
+        this->position = position;
+        this->isStart = isStart;
     }
-    return;
-}
+
+    friend bool operator<(StateSwitch const &ss1, StateSwitch const &ss2) {
+        return ss1.position < ss2.position;
+    }
+};
 
 void get_shuffle_region(std::vector<ShuffleRegion> &shuffleRegions,
                         int *shuffleMode,
-                        seqan::String<seqan::CharString> const &seqIds,
-                        seqan::StringSet<seqan::DnaString> const &seqs,
-                        std::vector<int> const &gffLabels,
-                        seqan::String<seqan::GffRecord> const &gffs) {
+                        seqan::StringSet<seqan::DnaString> const &seqs, //only needed for their length. Passing seqs is a little too much.
+                        std::vector<std::vector<MyCDS> > const myCDS_vecvec) {
 
-    assert (seqan::length(seqIds) == seqan::length(seqs));
-    int numSeqs = seqan::length(seqIds);
-    for (int i = 0; i < numSeqs; i++) {
-        seqan::CharString const seqId = seqIds[i];
-        seqan::DnaString const seq = seqs[i];
-
-        assert (seqan::length(gffLabels) == seqan::length(gffs));
-        int numGffs = seqan::length(gffs);
-
-        //create list first
-        for (int j = 0; j < numGffs; j++) {
-            seqan::GffRecord const gff = gffs[j];
-            int gffLabel = gffLabels[j];
-
-            if (gff.ref == seqId && gffLabel == 0) {
-                //WRITE ME
-            }
-        }
-
-        //sort
-
-        //push_back
-    }
 
     shuffleRegions.clear();
-    ShuffleRegion shuffleRegion("test", 0, 0, true, 0);
-    shuffleRegions.push_back(shuffleRegion);
-    return;
-}
+    int numSeqs = seqan::length(seqs);
+    for (int seqIdx = 0; seqIdx < numSeqs; seqIdx++) {
+        int seqLength = seqan::length(seqs[seqIdx]);
 
-void shuffle_region(seqan::DnaString seq, ShuffleRegion shuffleRegion) {
-    //TODO WIRTE ME
-    return;
-}
+        std::vector<StateSwitch> stateSwitchs;
+        int numCDSs = myCDS_vecvec[seqIdx].size();
+        for (int cdsIdx = 0; cdsIdx < numCDSs; cdsIdx++) {
+            MyCDS const myCDS = myCDS_vecvec[seqIdx][cdsIdx];
+            StateSwitch startSwitch = StateSwitch(cdsIdx, myCDS.get_start(), true);
+            StateSwitch endSwitch = StateSwitch(cdsIdx, myCDS.get_end(), false);
+            stateSwitchs.push_back(startSwitch);
+            stateSwitchs.push_back(endSwitch);
+        }
 
-void shuffle_genome(std::vector<ShuffleRegion> const &shuffleRegions,
-                    seqan::String<seqan::CharString> const &seqIds,
-                    seqan::StringSet<seqan::DnaString> const &seqs) {
+        std::sort(stateSwitchs.begin(), stateSwitchs.end());
 
-    assert (seqan::length(seqIds) == seqan::length(seqs));
-    int numSeqs = seqan::length(seqIds);
-    for (int i = 0; i < numSeqs; i++) {
-        seqan::CharString seqId = seqIds[i];
-        seqan::DnaString seq = seqs[i];
+        ShuffleRegionFactory shuffleRegionFactory;
+        std::vector<int> inProcess; //list cdsIdx
 
-        for (ShuffleRegion shuffleRegion : shuffleRegions) {
-            if (shuffleRegion.seqId == seqId) {
-                shuffle_region(seq, shuffleRegion);
+        if (shuffleMode[0] == 1) {
+            shuffleRegionFactory.initIntergenic(seqIdx, 0, 1);
+        }
+        for (StateSwitch stateSwitch : stateSwitchs) {
+            if (stateSwitch.isStart) {
+                if (inProcess.size() == 0) { //0 -> 1
+                    if (shuffleMode[0] == 1) {
+                        shuffleRegionFactory.completeIntergenic(seqIdx, stateSwitch.position, shuffleMode[0]);
+                    }
+
+                    MyCDS const myCDS = myCDS_vecvec[seqIdx][stateSwitch.cdsIdx];
+                    if (myCDS.is_typical()) {
+                        shuffleRegionFactory.initGenic(seqIdx, stateSwitch.position + 3, myCDS, shuffleMode[1],
+                                                       stateSwitch.cdsIdx);
+                    }
+                } else if (inProcess.size() == 1) { //1 -> 2
+                    MyCDS const myCDS = myCDS_vecvec[seqIdx][inProcess[0]];
+                    if (myCDS.is_typical()) {
+                        shuffleRegionFactory.completeGenic(seqIdx, stateSwitch.position, myCDS, shuffleMode[1],
+                                                           inProcess[0]);
+                    }
+                }
+                inProcess.push_back(stateSwitch.cdsIdx);
+            } else {
+                std::vector<int>::iterator position = std::find(inProcess.begin(), inProcess.end(), stateSwitch.cdsIdx);
+                assert (position != inProcess.end()); // startSwitch should have come before
+                inProcess.erase(position);
+
+                if (inProcess.size() == 1) { // 2 -> 1
+                    MyCDS const myCDS = myCDS_vecvec[seqIdx][inProcess[0]];
+                    if (myCDS.is_typical()) {
+                        shuffleRegionFactory.initGenic(seqIdx, stateSwitch.position, myCDS, shuffleMode[1],
+                                                       inProcess[0]);
+                    }
+                } else if (inProcess.size() == 0) { // 1 -> 0
+                    MyCDS const myCDS = myCDS_vecvec[seqIdx][stateSwitch.cdsIdx];
+                    if (myCDS.is_typical()) {
+                        shuffleRegionFactory.completeGenic(seqIdx, stateSwitch.position - 3, myCDS, shuffleMode[1],
+                                                           stateSwitch.cdsIdx);
+                    }
+                    if (shuffleMode[0] == 1) {
+                        shuffleRegionFactory.initIntergenic(seqIdx, stateSwitch.position, shuffleMode[0]);
+                    }
+                }
             }
         }
+
+        if (shuffleRegionFactory.in_process()) {
+            shuffleRegionFactory.completeIntergenic(seqIdx, seqLength, 1);
+        }
+
+        std::vector<ShuffleRegion> shuffleRegionsForSeq = shuffleRegionFactory.get_shuffleRegions();
+        shuffleRegions.insert(shuffleRegions.end(), shuffleRegionsForSeq.begin(), shuffleRegionsForSeq.end());
+    }
+
+    return;
+}
+
+void shuffle_region(seqan::DnaString seq,
+                    ShuffleRegion const shuffleRegion,
+                    std::mt19937 & mt,
+                    GeneticCode const & geneticCode) {
+    seqan::DnaString subSeq = seqan::infix(seq, shuffleRegion.start, shuffleRegion.end);
+    if(!shuffleRegion.isForward){
+        seqan::reverseComplement(subSeq);
+    }
+
+    switch(shuffleRegion.shuffleMode) {
+        case 1:
+            shuffle_base(subSeq, mt);
+            break;
+        case 2:
+            shuffle_codon(subSeq, mt);
+            break;
+        case 3:
+            shuffle_synonymous(subSeq, geneticCode, mt);
+            break;
+    }
+
+
+    seqan::replace(seq, shuffleRegion.start, shuffleRegion.end, subSeq);
+    return;
+}
+
+void shuffle_genome(seqan::StringSet<seqan::DnaString> &seqs,
+                    std::vector<ShuffleRegion> const &shuffleRegions,
+                    GeneticCode const &geneticCode) {
+
+    std::random_device rd;
+    std::mt19937 mt(rd());
+
+    for (ShuffleRegion shuffleRegion : shuffleRegions) {
+        shuffle_region(seqs[shuffleRegion.seqIdx], shuffleRegion, mt, geneticCode);
     }
     return;
 }
