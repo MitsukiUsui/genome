@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
     seqan::StringSet<seqan::DnaString> seqs;
     read_fasta(seqIds, seqs, seqFilepath);
 
-    for (seqan::CharString seqId : seqIds) {
+    for (seqan::CharString  &seqId : seqIds) {
         seqId = seqan::CharString(split(seqan::toCString(seqId), ' ')[0]);//trim ids
     }
     cout << "DONE: read " << seqan::length(seqIds) << " seqs from " << seqFilepath << endl;
@@ -103,16 +103,21 @@ int main(int argc, char **argv) {
 
     get_myCDS_vecvec(myCDS_vecvec, gffs, seqs, seqIds, geneticCode);
     for (int seqIdx = 0; seqIdx < seqan::length(seqs); seqIdx++) {
-        cout << "DONE: found " << myCDS_vecvec[seqIdx].size()<<" CDSs for "<<seqIds[seqIdx]<<endl;
+        cout << "\tDONE: found " << myCDS_vecvec[seqIdx].size()<<" typical CDSs for "<<seqIds[seqIdx]<<endl;
     }
 
     update_genetic_code(geneticCode, myCDS_vecvec, seqs);
+    geneticCode.__show_freq(true);
 
     std::vector<ShuffleRegion> shuffleRegions;
     get_shuffle_region(shuffleRegions, shuffleMode, seqs, myCDS_vecvec);
     cout << "DONE: find " << seqan::length(shuffleRegions) << " shuffle regions" << endl;
 
     shuffle_genome(seqs, shuffleRegions, geneticCode);
+
+    geneticCode.clear_count();
+    update_genetic_code(geneticCode, myCDS_vecvec, seqs);
+    geneticCode.__show_freq(true);
 
     cout << "DONE: output to " << outFilepath << endl;
     return 0;

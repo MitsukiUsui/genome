@@ -16,7 +16,7 @@
 #include "myseqan.h"
 #include "myutil.h"
 #include "geneticcode.h"
-//#include "../unittest/lib/googletest-release-1.8.0/googletest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 using std::cout;
 using std::cerr;
@@ -80,7 +80,7 @@ void shuffle_synonymous(TSeq &seq, GeneticCode const &gc, std::mt19937 &mt) {
 // wrapper class for seqan GffRecord
 //------------------------------------------------------------
 class MyCDS {
-    //FRIEND_TEST(genome_shuffle, test_classify);
+    FRIEND_TEST(genome_shuffle, test_classify);
 
     seqan::GffRecord gff;
     int label;
@@ -238,6 +238,7 @@ public:
 
         ShuffleRegion shuffleRegion;
         shuffleRegion.seqIdx = seqIdx;
+        shuffleRegion.isForward = myCDS.is_forward();
         shuffleRegion.shuffleMode = shuffleMode;
 
         int start;
@@ -407,7 +408,7 @@ void get_shuffle_region(std::vector<ShuffleRegion> &shuffleRegions,
     return;
 }
 
-void shuffle_region(seqan::DnaString seq,
+void shuffle_region(seqan::DnaString & seq,
                     ShuffleRegion const shuffleRegion,
                     std::mt19937 & mt,
                     GeneticCode const & geneticCode) {
@@ -428,7 +429,9 @@ void shuffle_region(seqan::DnaString seq,
             break;
     }
 
-
+    if(!shuffleRegion.isForward){
+        seqan::reverseComplement(subSeq);
+    }
     seqan::replace(seq, shuffleRegion.start, shuffleRegion.end, subSeq);
     return;
 }
