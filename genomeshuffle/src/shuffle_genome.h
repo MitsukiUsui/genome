@@ -16,7 +16,7 @@
 #include "myseqan.h"
 #include "myutil.h"
 #include "geneticcode.h"
-#include "../unittest/lib/googletest-release-1.8.0/googletest/include/gtest/gtest.h"
+//#include "../unittest/lib/googletest-release-1.8.0/googletest/include/gtest/gtest.h"
 
 using std::cout;
 using std::cerr;
@@ -80,7 +80,7 @@ void shuffle_synonymous(TSeq &seq, GeneticCode const &gc, std::mt19937 &mt) {
 // wrapper class for seqan GffRecord
 //------------------------------------------------------------
 class MyCDS {
-    FRIEND_TEST(genome_shuffle, test_classify);
+    //FRIEND_TEST(genome_shuffle, test_classify);
 
     seqan::GffRecord gff;
     int label;

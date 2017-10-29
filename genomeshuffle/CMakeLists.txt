@@ -8,7 +8,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build)
 # Name of project and that it is C++ only.
 project (shuffle_genome CXX)
 add_subdirectory(src)
-add_subdirectory(unittest)
+#add_subdirectory(unittest)
 
 # ----------------------------------------------------------------------------
 # Dependencies
@@ -28,7 +28,8 @@ find_package (SeqAn REQUIRED)
 include_directories (${SEQAN_INCLUDE_DIRS})
 
 #Add additional include directories.
-include_directories (/Users/mitsuki/sandbox/genome/helper)
+#include_directories (/Users/mitsuki/sandbox/genome/helper)
+include_directories(../helper)
 
 # Add definitions set by find_package (SeqAn).
 add_definitions (${SEQAN_DEFINITIONS})

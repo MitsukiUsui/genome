@@ -26,7 +26,7 @@ void set_parser(seqan::ArgumentParser &parser, int argc, char **argv) {/*{{{*/
     seqan::addUsageLine(parser,
                         "\"seqFilepath\" \"gffFilepath\"");
     seqan::addDescription(parser,
-                          "This program shuffle genomes preseving CDS sequences."
+                          "This program shuffle genomes preseving CDS regions."
     );
     addArgument(parser, seqan::ArgParseArgument(
             seqan::ArgParseArgument::INPUT_FILE, "seqFilepath"));
@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
     //read fasta
     //------------------------------------------------------------
     seqan::String<seqan::CharString> seqIds;
-    seqan::StringSet<seqan::Dna5String> seqs;
+    seqan::StringSet<seqan::DnaString> seqs;
     read_fasta(seqIds, seqs, seqFilepath);
 
     for (seqan::CharString seqId : seqIds) {
@@ -101,8 +101,11 @@ int main(int argc, char **argv) {
     GeneticCode geneticCode(11);
     std::vector< std::vector<MyCDS> > myCDS_vecvec;
 
-
     get_myCDS_vecvec(myCDS_vecvec, gffs, seqs, seqIds, geneticCode);
+    for (int seqIdx = 0; seqIdx < seqan::length(seqs); seqIdx++) {
+        cout << "DONE: found " << myCDS_vecvec[seqIdx].size()<<" CDSs for "<<seqIds[seqIdx]<<endl;
+    }
+
     update_genetic_code(geneticCode, myCDS_vecvec, seqs);
 
     std::vector<ShuffleRegion> shuffleRegions;

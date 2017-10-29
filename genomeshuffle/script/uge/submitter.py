@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import sys
 
 sys.path.append("/home/mitsuki/altorf/genome/helper")
