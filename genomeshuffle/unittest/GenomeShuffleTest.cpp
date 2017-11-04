@@ -21,7 +21,7 @@ using std::endl;
 
 TEST(myseqan, test_read_gff) {
     seqan::String<seqan::GffRecord> records;
-    seqan::CharString gffFilepath = "/Users/mitsuki/sandbox/genome/genomeshuffle/unittest/test.gff";
+    seqan::CharString gffFilepath = "../unittest/test.gff";
     read_gff(records, gffFilepath);
 
     ASSERT_EQ(seqan::length(records), 3);
