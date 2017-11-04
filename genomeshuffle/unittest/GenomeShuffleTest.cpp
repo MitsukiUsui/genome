@@ -24,7 +24,7 @@ TEST(myseqan, test_read_gff) {
     seqan::CharString gffFilepath = "../unittest/test.gff";
     read_gff(records, gffFilepath);
 
-    ASSERT_EQ(seqan::length(records), 3);
+    ASSERT_EQ(seqan::length(records), 2);
 
     ASSERT_TRUE(records[0].ref == "seq1");
     ASSERT_TRUE(records[0].type == "gene");
