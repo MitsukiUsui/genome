@@ -1,4 +1,4 @@
 project(src)
 
-include_directories(../unittest/lib/googletest-release-1.8.0/googletest/include)
-include_directories(../unittest/lib/googletest-release-1.8.0/googlemock/include)
+add_executable (shuffle_genome shuffle_genome.cpp)
+target_link_libraries (shuffle_genome ${SEQAN_LIBRARIES})
