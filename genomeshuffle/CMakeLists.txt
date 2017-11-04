@@ -4,11 +4,10 @@ cmake_minimum_required (VERSION 3.0.0)
 SET(CMAKE_CXX_COMPILER /usr/local/bin/g++)
 SET(CMAKE_CXX_STANDARD 14)
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build)
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -v -stdlib=libc++")
 
 # Name of project and that it is C++ only.
 project (shuffle_genome CXX)
-add_subdirectory(src)
-add_subdirectory(unittest)
 
 # ----------------------------------------------------------------------------
 # Dependencies
@@ -36,6 +35,14 @@ add_definitions (${SEQAN_DEFINITIONS})
 # Add CXX flags found by find_package (SeqAn).
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SEQAN_CXX_FLAGS}")
 
-# Add executable and link against SeqAn dependencies.
-add_executable (shuffle_genome src/shuffle_genome.cpp)
-target_link_libraries (shuffle_genome ${SEQAN_LIBRARIES})
+
+#--------------------------------------------------------------------------------
+# google test setup
+#--------------------------------------------------------------------------------
+include_directories(unittest/lib/googletest-release-1.8.0/googletest/include)
+include_directories(unittest/lib/googletest-release-1.8.0/googlemock/include)
+
+include_directories(src)
+add_subdirectory(src)
+add_subdirectory(unittest)
+
