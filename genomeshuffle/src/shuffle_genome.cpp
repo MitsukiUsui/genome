@@ -114,19 +114,19 @@ int main(int argc, char **argv) {
     }
 
     update_genetic_code(geneticCode, myCDS_vecvec, seqs);
-    geneticCode.__show_freq(true);
+    //geneticCode.__show_freq(true);
 
     std::vector<ShuffleRegion> shuffleRegions;
     get_shuffle_region(shuffleRegions, shuffleMode, seqs, myCDS_vecvec);
-    cout << "DONE: find " << seqan::length(shuffleRegions) << " shuffle regions" << endl;
+    cout << "DONE: find " << shuffleRegions.size() << " shuffle regions" << endl;
 
     shuffle_genome(seqs, shuffleRegions, geneticCode);
-
-    geneticCode.clear_count();
-    update_genetic_code(geneticCode, myCDS_vecvec, seqs);
-    geneticCode.__show_freq(true);
-
     write_fasta(seqIds, seqs, outFilepath);
     cout << "DONE: output to " << outFilepath << endl;
+
+    //geneticCode.clear_count();
+    //update_genetic_code(geneticCode, myCDS_vecvec, seqs);
+    //geneticCode.__show_freq(true);
+
     return 0;
 }
