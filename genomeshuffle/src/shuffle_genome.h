@@ -117,9 +117,9 @@ public:
 
     MyCDS() {}
 
-    MyCDS(seqan::GffRecord const gff,
-          seqan::DnaString const seq,
-          GeneticCode const geneticCode) {
+    MyCDS(seqan::GffRecord const &gff,
+          seqan::DnaString const &seq,
+          GeneticCode const &geneticCode) {
         this->gff = gff;
         this->label = classify(seq, geneticCode);
         if (is_typical()) {
@@ -468,7 +468,7 @@ void shuffle_genome(seqan::StringSet<seqan::DnaString> &seqs,
     std::mt19937 mt(rd());
 
     for (ShuffleRegion shuffleRegion : shuffleRegions) {
-        std::cout<<shuffleRegion.start<<","<<shuffleRegion.end<<endl;
+//        std::cout<<shuffleRegion.start<<","<<shuffleRegion.end<<endl;
         shuffle_region(seqs[shuffleRegion.seqIdx], shuffleRegion, mt, geneticCode);
     }
     return;
