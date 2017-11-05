@@ -40,12 +40,12 @@ TEST(seqan, test_infix) {
     ASSERT_TRUE(ifx1=="AAA"); //N will be convert to NNN
 
     seqan::Dna5String seq2 = "NNN";
-    seqan::Infix<seqan::Dna5String>::Type ifx2 = seqan::infix(seq1, 0, 3); //infix
+    seqan::Infix<seqan::Dna5String>::Type ifx2 = seqan::infix(seq2, 0, 3); //infix
     for (int i=0;i<3;i++){
         ifx2[i] = 'C';
     }
     ASSERT_TRUE(seq2=="CCC"); //will change the base string
-    ASSERT_TRUE(ifx2=="CCC");//N will be convert to NNN
+    ASSERT_TRUE(ifx2=="CCC"); //N will be convert to NNN
 
     std::string seq3 = "ATG";
     seqan::DnaString ifx3 = seqan::infix(seq3, 0, 3);

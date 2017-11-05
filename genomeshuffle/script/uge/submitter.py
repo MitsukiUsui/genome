@@ -10,7 +10,7 @@ def main(dbFilepath):
     dc = DbController(dbFilepath)
     taxid_lst = dc.get_target("shuffle")
     print("START: submit {} jobs".format(len(taxid_lst)))
-    for taxid in taxid_lst[:10]:
+    for taxid in taxid_lst:
         cmd = "qsub caller.sh {}".format(taxid)
         myrun(cmd)
 
