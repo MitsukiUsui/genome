@@ -1,0 +1,2 @@
+seq1	.	gene	100	200	.	+	.	ID=gene00001;
+seq1	.	CDS	300	400	.	+	.	ID=cds00001;

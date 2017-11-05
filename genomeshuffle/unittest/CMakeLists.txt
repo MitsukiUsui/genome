@@ -1,8 +1,10 @@
 project(unittest)
 
+include_directories(../src)
 add_subdirectory(lib/googletest-release-1.8.0)
-include_directories(lib/googletest-release-1.8.0/googletest/include)
-include_directories(lib/googletest-release-1.8.0/googlemock/include)
 
-add_executable(runTest test.cpp)
-target_link_libraries(runTest gtest gtest_main)
+add_executable(runGenomeShuffleTest GenomeShuffleTest.cpp)
+target_link_libraries(runGenomeShuffleTest gtest gtest_main)
+
+add_executable(runGeneticCodeTest GeneticCodeTest.cpp)
+target_link_libraries(runGeneticCodeTest gtest gtest_main)
