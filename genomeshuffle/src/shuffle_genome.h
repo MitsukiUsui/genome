@@ -311,7 +311,19 @@ struct StateSwitch {
     }
 
     friend bool operator<(StateSwitch const &ss1, StateSwitch const &ss2) {
-        return ss1.position < ss2.position;
+        if (ss1.position < ss2.position) {
+            return true;
+        } else if (ss1.position == ss2.position){
+            if (!ss1.isStart && ss2.isStart){
+                return true;
+            } else if (ss1.isStart && !ss2.isStart){
+                return false;
+            } else { //need to be deterministic
+                return ss1.cdsIdx < ss2.cdsIdx;
+            }
+        } else {
+            return false;
+        }
     }
 };
 
