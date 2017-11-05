@@ -103,7 +103,14 @@ int main(int argc, char **argv) {
 
     get_myCDS_vecvec(myCDS_vecvec, gffs, seqs, seqIds, geneticCode);
     for (int seqIdx = 0; seqIdx < seqan::length(seqs); seqIdx++) {
-        cout << "\tDONE: found " << myCDS_vecvec[seqIdx].size()<<" typical CDSs for "<<seqIds[seqIdx]<<endl;
+        int cdsCount=0;
+        int typicalCount=0;
+        for(MyCDS const myCDS : myCDS_vecvec[seqIdx]){
+            cdsCount += 1;
+            if (myCDS.is_typical()) typicalCount+=1;
+        }
+        double typicalPer=(double)typicalCount/cdsCount*100;
+        cout << "\tDONE: found " <<typicalCount <<"/" <<cdsCount <<"("<<typicalPer <<"%) typical CDSs for "<<seqIds[seqIdx]<<endl;
     }
 
     update_genetic_code(geneticCode, myCDS_vecvec, seqs);
@@ -119,6 +126,7 @@ int main(int argc, char **argv) {
     update_genetic_code(geneticCode, myCDS_vecvec, seqs);
     geneticCode.__show_freq(true);
 
+    write_fasta(seqIds, seqs, outFilepath);
     cout << "DONE: output to " << outFilepath << endl;
     return 0;
 }
