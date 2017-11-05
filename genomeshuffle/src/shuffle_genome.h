@@ -59,18 +59,17 @@ void shuffle_codon(TSeq &seq, std::mt19937 &mt) {
     return;
 }
 
-template<typename TSeq>
-void shuffle_synonymous(TSeq &seq, GeneticCode const &gc, std::mt19937 &mt) {
+void shuffle_synonymous(seqan::DnaString &seq, GeneticCode const &gc, std::mt19937 &mt) {
     unsigned bpLength = seqan::length(seq);
     assert(bpLength % 3 == 0);
     unsigned aaLength = bpLength / 3;
 
     for (unsigned i = 0; i < aaLength; i++) {
-        seqan::DnaString codon = seqan::infix(seq, 3 * i, 3 * (i + 1));
+        seqan::Infix<seqan::DnaString>::Type codon = seqan::infix(seq, 3 * i, 3 * (i + 1));
         gc.synonymous_sub(codon, mt);
-        for (unsigned j = 0; j < 3; j++) {
-            seq[3 * i + j] = codon[j];
-        }
+//        for (unsigned j = 0; j < 3; j++) {
+//            seq[3 * i + j] = codon[j];
+//        }
     }
     return;
 }
@@ -97,25 +96,20 @@ class MyCDS {
             return 2;
         }
 
-        seqan::Dna5String subSeq = seqan::infix(seq, gff.beginPos, gff.endPos);
+        seqan::DnaString subSeq = seqan::infix(seq, gff.beginPos, gff.endPos); //create new object in order to use Infix.
+
         if (gff.strand == '-') {
             seqan::reverseComplement(subSeq);
         }
 
-        for (unsigned i = 0; i < length; i++) {
-            if (subSeq[i] == 'N') {
-                return 3;
-            }
-        }
-
         int aaLength = length / 3;
         for (int i = 0; i < aaLength - 1; i++) {
-            seqan::Dna5String codon = seqan::infix(subSeq, 3 * i, 3 * (i + 1));
+            seqan::Infix<seqan::DnaString>::Type codon = seqan::infix(subSeq, 3 * i, 3 * (i + 1));
             if (geneticCode.is_stop_codon(codon))
                 return 4;
         }
 
-        seqan::Dna5String codon = seqan::infix(subSeq, 3 * (aaLength - 1), 3 * aaLength);
+        seqan::Infix<seqan::DnaString>::Type codon = seqan::infix(subSeq, 3 * (aaLength - 1), 3 * aaLength);
         if (!geneticCode.is_stop_codon(codon)) {
             return 5;
         }
@@ -405,6 +399,27 @@ void get_shuffle_region(std::vector<ShuffleRegion> &shuffleRegions,
         shuffleRegions.insert(shuffleRegions.end(), shuffleRegionsForSeq.begin(), shuffleRegionsForSeq.end());
     }
 
+    return;
+}
+
+void output_shuffle_regions(std::vector<ShuffleRegion> const &shuffleRegions,
+                            seqan::String<seqan::CharString> const &seqIds,
+                            std::string const &outFilepath) {
+
+    std::ofstream ofs(outFilepath);
+    if (!ofs) {
+        std::cerr << "ERROR: Could not open " << outFilepath << std::endl;
+    }
+
+    for(ShuffleRegion const &shuffleRegion : shuffleRegions){
+        ofs<< seqIds[shuffleRegion.seqIdx]<<"\t"
+           << shuffleRegion.start << "\t"
+           << shuffleRegion.end << "\t"
+           << shuffleRegion.shuffleMode << "\t"
+           << 0 << "\t"
+           << (shuffleRegion.isForward ? '+' : '-') << endl;
+    }
+    ofs.close();
     return;
 }
 

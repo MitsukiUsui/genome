@@ -34,14 +34,22 @@ TEST(myseqan, test_read_gff) {
 }
 
 TEST(seqan, test_infix) {
-    seqan::Dna5String seq_ds= "NNN";
-    seqan::DnaString seq_if = seqan::infix(seq_ds, 0, 3);
-    ASSERT_TRUE(seq_if=="AAA"); //N will be convert to NNN
-    ASSERT_TRUE(seq_ds=="NNN"); //won't change the base string
+    seqan::Dna5String seq1= "NNN";
+    seqan::DnaString ifx1 = seqan::infix(seq1, 0, 3); //infix copy
+    ASSERT_TRUE(seq1=="NNN"); //won't change the base string
+    ASSERT_TRUE(ifx1=="AAA"); //N will be convert to NNN
 
-    std::string seq_str = "ATGC";
-    seq_if = seqan::infix(seq_str, 0, 4);
-    ASSERT_TRUE(seq_if=="ATGC"); //infix can be used for std::string
+    seqan::Dna5String seq2 = "NNN";
+    seqan::Infix<seqan::Dna5String>::Type ifx2 = seqan::infix(seq1, 0, 3); //infix
+    for (int i=0;i<3;i++){
+        ifx2[i] = 'C';
+    }
+    ASSERT_TRUE(seq2=="CCC"); //will change the base string
+    ASSERT_TRUE(ifx2=="CCC");//N will be convert to NNN
+
+    std::string seq3 = "ATG";
+    seqan::DnaString ifx3 = seqan::infix(seq3, 0, 3);
+    ASSERT_TRUE(ifx3=="ATG"); //infix can be used for std::string
 }
 
 TEST(seqan, test_length) {
@@ -152,7 +160,7 @@ TEST(genome_shuffle, test_shuffle_codon){
 }
 
 TEST(genome_shuffle, test_shuffle_synonymous){
-    seqan::Dna5String seq = "TCTTCTTCCTCA";
+    seqan::DnaString seq = "TCTTCTTCCTCA";
     GeneticCode geneticCode = GeneticCode(11);
     geneticCode.update_count(seq);
     std::random_device rd;

@@ -261,6 +261,8 @@ void GeneticCode::update_freq() {/*{{{*/
 
 template<typename TSeq>
 void GeneticCode::synonymous_sub(TSeq &codon, std::mt19937 &mt) const {/*{{{*/
+    assert (!is_stop_codon(codon));
+
     int codonIdOld = codon_encode(codon);
     int aaId = codonToAa[codonIdOld];
 
@@ -279,7 +281,7 @@ void GeneticCode::synonymous_sub(TSeq &codon, std::mt19937 &mt) const {/*{{{*/
     }
 
     if (codonIdNew == -1){
-        std::cerr<<"ERROR: no frequency is defined."<<std::endl;
+        std::cerr<<"WARN: no frequency is defined."<<std::endl;
         codonIdNew = aaToCodon[aaIndex[aaId]];
     }
 

@@ -119,6 +119,7 @@ int main(int argc, char **argv) {
     std::vector<ShuffleRegion> shuffleRegions;
     get_shuffle_region(shuffleRegions, shuffleMode, seqs, myCDS_vecvec);
     cout << "DONE: find " << seqan::length(shuffleRegions) << " shuffle regions" << endl;
+//    output_shuffle_regions(shuffleRegions, seqIds, "out.bed");
 
     shuffle_genome(seqs, shuffleRegions, geneticCode);
 
