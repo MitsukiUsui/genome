@@ -67,9 +67,6 @@ void shuffle_synonymous(seqan::DnaString &seq, GeneticCode const &gc, std::mt199
     for (unsigned i = 0; i < aaLength; i++) {
         seqan::Infix<seqan::DnaString>::Type codon = seqan::infix(seq, 3 * i, 3 * (i + 1));
         gc.synonymous_sub(codon, mt);
-//        for (unsigned j = 0; j < 3; j++) {
-//            seq[3 * i + j] = codon[j];
-//        }
     }
     return;
 }
@@ -459,6 +456,7 @@ void shuffle_genome(seqan::StringSet<seqan::DnaString> &seqs,
     std::mt19937 mt(rd());
 
     for (ShuffleRegion shuffleRegion : shuffleRegions) {
+        std::cout<<shuffleRegion.start<<","<<shuffleRegion.end<<endl;
         shuffle_region(seqs[shuffleRegion.seqIdx], shuffleRegion, mt, geneticCode);
     }
     return;
