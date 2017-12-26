@@ -30,4 +30,4 @@ For further information on usage, please refer to genome_shuffle.html or `./geno
     * 3 shuffing method is defined so far
         1. shuffle_base()
         1. shuffle_codon()
-        1. shuffle_synonymous()
+        1. shuffle_synonymous()
