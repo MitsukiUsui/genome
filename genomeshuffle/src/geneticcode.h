@@ -335,7 +335,8 @@ void GeneticCode::__show() const {/*{{{*/
     std::cout << std::endl;
 }/*}}}*/
 
-void GeneticCode::__show_freq(bool isFreq) const {/*{{{*/
+void GeneticCode::__show_freq(bool isFreq) const {
+    std::cout<<std::endl;
     for (int aaId = 0; aaId < 21; aaId++) {
         std::cout << aa_decode(aaId) << "\t";
 
@@ -349,7 +350,8 @@ void GeneticCode::__show_freq(bool isFreq) const {/*{{{*/
         }
         std::cout << std::endl;
     }
-}/*}}}*/
+    std::cout<<std::endl;
+}
 
 
 #endif //GENETICCODE_H_

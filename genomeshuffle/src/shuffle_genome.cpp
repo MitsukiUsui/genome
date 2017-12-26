@@ -33,7 +33,9 @@ void set_parser(seqan::ArgumentParser &parser, int argc, char **argv) {/*{{{*/
     addArgument(parser, seqan::ArgParseArgument(
             seqan::ArgParseArgument::INPUT_FILE, "gffFilepath"));
     addArgument(parser, seqan::ArgParseArgument(
-            seqan::ArgParseArgument::OUTPUT_FILE, "outFilepath"));
+            seqan::ArgParseArgument::OUTPUT_FILE, "simFilepath"));
+    addArgument(parser, seqan::ArgParseArgument(
+            seqan::ArgParseArgument::OUTPUT_FILE, "bedFilepath"));
     addArgument(parser, seqan::ArgParseArgument(
             seqan::ArgParseArgument::INTEGER, "shuffleMode1"));
     addArgument(parser, seqan::ArgParseArgument(
@@ -59,18 +61,21 @@ int main(int argc, char **argv) {
     seqan::getArgumentValue(seqFilepath, parser, 0);
     seqan::CharString gffFilepath;
     seqan::getArgumentValue(gffFilepath, parser, 1);
-    seqan::CharString outFilepath;
-    seqan::getArgumentValue(outFilepath, parser, 2);
+    seqan::CharString simFilepath;
+    seqan::getArgumentValue(simFilepath, parser, 2);
+    seqan::CharString bedFilepath;
+    seqan::getArgumentValue(bedFilepath, parser, 3);
     int shuffleMode[2] = {};
-    seqan::getArgumentValue(shuffleMode[0], parser, 3);
-    seqan::getArgumentValue(shuffleMode[1], parser, 4);
+    seqan::getArgumentValue(shuffleMode[0], parser, 4);
+    seqan::getArgumentValue(shuffleMode[1], parser, 5);
     bool dryrun = seqan::isSet(parser, "dryrun");
 
     //configuration
     cout << "DONE: read configuration:" << endl;
     cout << "\tseqFilepath: " << seqFilepath << endl;
     cout << "\tgffFilepath: " << gffFilepath << endl;
-    cout << "\toutFilepath: " << outFilepath << endl;
+    cout << "\tsimFilepath: " << simFilepath << endl;
+    cout << "\tbedFilepath: " << bedFilepath << endl;
     cout << "\tshuffle mode: " << shuffleMode[0] << ", " << shuffleMode[1] << endl;
     if (dryrun) {
         cout << "\texecution: DRYRUN" << endl;
@@ -114,20 +119,21 @@ int main(int argc, char **argv) {
     }
 
     update_genetic_code(geneticCode, myCDS_vecvec, seqs);
-    //geneticCode.__show_freq(true);
+    geneticCode.__show_freq(true);
 
     std::vector<ShuffleRegion> shuffleRegions;
     get_shuffle_region(shuffleRegions, shuffleMode, seqs, myCDS_vecvec);
     cout << "DONE: find " << shuffleRegions.size() << " shuffle regions" << endl;
-//    output_shuffle_regions(shuffleRegions, seqIds, "out.bed");
+    output_shuffle_regions(shuffleRegions, seqIds, seqan::toCString(bedFilepath));
+    cout << "DONE: output shuffle regions to " << bedFilepath << endl;
 
     shuffle_genome(seqs, shuffleRegions, geneticCode);
-    write_fasta(seqIds, seqs, outFilepath);
-    cout << "DONE: output to " << outFilepath << endl;
+    write_fasta(seqIds, seqs, simFilepath);
+    cout << "DONE: output simulated genome to " << simFilepath << endl;
 
-    //geneticCode.clear_count();
-    //update_genetic_code(geneticCode, myCDS_vecvec, seqs);
-    //geneticCode.__show_freq(true);
+    geneticCode.clear_count();
+    update_genetic_code(geneticCode, myCDS_vecvec, seqs);
+    geneticCode.__show_freq(true);
 
     return 0;
 }

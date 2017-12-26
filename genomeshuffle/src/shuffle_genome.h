@@ -318,7 +318,7 @@ struct StateSwitch {
                 return true;
             } else if (ss1.isStart && !ss2.isStart){
                 return false;
-            } else { //need to be deterministic
+            } else { //need to be deterministic for the sorting
                 return ss1.cdsIdx < ss2.cdsIdx;
             }
         } else {
@@ -411,9 +411,10 @@ void get_shuffle_region(std::vector<ShuffleRegion> &shuffleRegions,
     return;
 }
 
+template <typename TFilepath>
 void output_shuffle_regions(std::vector<ShuffleRegion> const &shuffleRegions,
                             seqan::String<seqan::CharString> const &seqIds,
-                            std::string const &outFilepath) {
+                            TFilepath const &outFilepath) {
 
     std::ofstream ofs(outFilepath);
     if (!ofs) {

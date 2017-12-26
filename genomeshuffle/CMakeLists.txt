@@ -34,9 +34,7 @@ add_subdirectory(unittest)
 
 # Add definitions set by find_package (SeqAn).
 add_definitions (${SEQAN_DEFINITIONS})
-
 # Add CXX flags found by find_package (SeqAn).
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SEQAN_CXX_FLAGS}")
 
-# Add executable and link against SeqAn dependencies.
 add_subdirectory(src)

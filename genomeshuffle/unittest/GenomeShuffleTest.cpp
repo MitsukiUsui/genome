@@ -21,7 +21,7 @@ using std::endl;
 
 TEST(myseqan, test_read_gff) {
     seqan::String<seqan::GffRecord> records;
-    seqan::CharString gffFilepath = "../unittest/test.gff";
+    seqan::CharString gffFilepath = "../unittest/test.gff";  // execution is in build directory
     read_gff(records, gffFilepath);
 
     ASSERT_EQ(seqan::length(records), 2);
@@ -37,7 +37,7 @@ TEST(seqan, test_infix) {
     seqan::Dna5String seq1= "NNN";
     seqan::DnaString ifx1 = seqan::infix(seq1, 0, 3); //infix copy
     ASSERT_TRUE(seq1=="NNN"); //won't change the base string
-    ASSERT_TRUE(ifx1=="AAA"); //N will be convert to NNN
+    ASSERT_TRUE(ifx1=="AAA"); //N will be automatically convert to NNN when converting to DnaString
 
     seqan::Dna5String seq2 = "NNN";
     seqan::Infix<seqan::Dna5String>::Type ifx2 = seqan::infix(seq2, 0, 3); //infix
@@ -49,7 +49,7 @@ TEST(seqan, test_infix) {
 
     std::string seq3 = "ATG";
     seqan::DnaString ifx3 = seqan::infix(seq3, 0, 3);
-    ASSERT_TRUE(ifx3=="ATG"); //infix can be used for std::string
+    ASSERT_TRUE(ifx3=="ATG"); //copied infix can also be used for std::string
 }
 
 TEST(seqan, test_length) {
@@ -137,9 +137,32 @@ TEST(genome_shuffle, test_get_shuffle_region) {
     ASSERT_EQ(shuffleRegions[2].start, 12);
     ASSERT_EQ(shuffleRegions[2].end, 15);
     ASSERT_EQ(shuffleRegions[2].shuffleMode, 1);
+
+    ASSERT_TRUE(shuffleRegions[3].seqIdx == 1);
+    ASSERT_EQ(shuffleRegions[3].start, 3);
+    ASSERT_EQ(shuffleRegions[3].end, 6);
+    ASSERT_EQ(shuffleRegions[3].shuffleMode, 3);
+
+    ASSERT_TRUE(shuffleRegions[4].seqIdx == 1);
+    ASSERT_EQ(shuffleRegions[4].start, 13);
+    ASSERT_EQ(shuffleRegions[4].end, 16);
+    ASSERT_EQ(shuffleRegions[4].shuffleMode, 3);
+
+    ASSERT_TRUE(shuffleRegions[5].seqIdx == 2);
+    ASSERT_EQ(shuffleRegions[5].start, 3);
+    ASSERT_EQ(shuffleRegions[5].end, 6);
+    ASSERT_EQ(shuffleRegions[5].shuffleMode, 3);
+
+    ASSERT_TRUE(shuffleRegions[6].seqIdx == 2);
+    ASSERT_EQ(shuffleRegions[6].start, 18);
+    ASSERT_EQ(shuffleRegions[6].end, 21);
+    ASSERT_EQ(shuffleRegions[6].shuffleMode, 3);
 }
 
 TEST(genome_shuffle, test_shuffle_base){
+
+    // TODO: test code yet to be written
+
     seqan::DnaString seq = "AAATTTGGGCCC";
     std::random_device rd;
     std::mt19937 mt(rd());
@@ -150,6 +173,9 @@ TEST(genome_shuffle, test_shuffle_base){
 }
 
 TEST(genome_shuffle, test_shuffle_codon){
+
+    // TODO: test code yet to be written
+
     seqan::DnaString seq = "AAATTTGGGCCC";
     std::random_device rd;
     std::mt19937 mt(rd());
@@ -160,6 +186,9 @@ TEST(genome_shuffle, test_shuffle_codon){
 }
 
 TEST(genome_shuffle, test_shuffle_synonymous){
+
+    // TODO: test code yet to be written
+
     seqan::DnaString seq = "TCTTCTTCCTCA";
     GeneticCode geneticCode = GeneticCode(11);
     geneticCode.update_count(seq);
