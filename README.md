@@ -29,16 +29,3 @@ I chose SeqAn as C++ library in order to process DNA sequence efficiently and to
 
 * Anaconda (ver 3.X)
 * BioPython
-
-## Compilation of .cpp
-* Commands below creates binary file in build directory.
-```
-cd $PATH_TO_DESIGNATED_DIR
-mkdir build
-cd build
-cmake ../src
-make
-```
-* In case you obtained SeqAn from a git clone, you need to specify the install location and include path.
-    * `cmake ../src -DCMAKE_PREFIX_PATH="$HOME/software/seqan/util/cmake" -DSEQAN_INCLUDE_PATH="$HOME/software/seqan/include"`
-        * Please change paths according to your environment.
