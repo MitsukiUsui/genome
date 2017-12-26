@@ -8,6 +8,20 @@ For further information on usage, please refer to genome_shuffle.html or `./geno
 * Preprocessed `.fna`
 * Downloaded `.gff` from RefSeq
 
+## Compilation of .cpp
+* Commands below creates binary file in build directory.
+```
+cd $PATH_TO_DESIGNATED_DIR
+cd build
+cmake ../ 
+make
+```
+* If you fail setting CMAKE_CXX_COMPILER properly, recreate build directory. It can only be set the first time cmake is run in a given build directory.
+* In case you obtained SeqAn from a git clone, you need to specify the install location and include path.
+    * `cmake ../ -DCMAKE_PREFIX_PATH="$HOME/software/seqan/util/cmake" -DSEQAN_INCLUDE_PATH="$HOME/software/seqan/include"`
+        * Please change paths according to your environment.
+
+
 ## Implementation Details
 
 ### Class
@@ -27,7 +41,4 @@ For further information on usage, please refer to genome_shuffle.html or `./geno
     * get a vector of ShuffleRegion according to　myCDS_vecvec
 1. shuffle_genome()
     * shuffle sequences according to shuffleRegions return by get_shuffle_region()
-    * 3 shuffing method is defined so far
-        1. shuffle_base()
-        1. shuffle_codon()
-        1. shuffle_synonymous()
+    * 3 shuffing method (base, codon, synonymous) is defined so far
