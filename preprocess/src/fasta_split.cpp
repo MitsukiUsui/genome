@@ -2,6 +2,8 @@
 // Created by 薄井光生 on 2017/10/10.
 //
 
+#define SEQAN_ENABLE_DEBUG 1
+
 #include <seqan/arg_parse.h>
 #include <seqan/basic.h>
 #include "myseqan.h"
@@ -58,12 +60,19 @@ int main(int argc, char **argv) {
     int convertFlag;
     seqan::getOptionValue(convertFlag, parser, "convert");
 
+    //configuration
+    cout << "DONE: configuration" << endl;
+    cout << "\tseqFilepath: " << seqFilepath << endl;
+    cout << "\tchrFilepath: " << outFilepaths[0] << endl;
+    cout << "\tplsFilepath: " << outFilepaths[1] << endl;
+    cout << "\tlogFilepath: " << logFilepath << endl;
+    cout << "\tConvert mode: " << convertFlag << endl;
 
     //read input file
     seqan::StringSet<seqan::CharString> ids;
     seqan::StringSet<seqan::IupacString> seqs;
     read_fasta(ids, seqs, seqFilepath);
-    cout << "DONE: read " << seqan::length(ids) << " seqs from " << seqFilepath << endl;
+    cout << "DONE: read " << seqan::length(ids) << " seqs" << endl;
 
     //classify chromosome and plasmid
     std::vector<int> labels;

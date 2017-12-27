@@ -7,8 +7,6 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build)
 
 # Name of project and that it is C++ only.
 project (fasta_split CXX)
-add_subdirectory(src)
-add_subdirectory(unittest)
 
 # ----------------------------------------------------------------------------
 # Dependencies
@@ -29,6 +27,10 @@ include_directories (${SEQAN_INCLUDE_DIRS})
 
 #Add additional include directories.
 include_directories(../helper)
+include_directories(unittest/lib/googletest-release-1.8.0/googletest/include)
+include_directories(unittest/lib/googletest-release-1.8.0/googlemock/include)
+
+add_subdirectory(unittest)
 
 # Add definitions set by find_package (SeqAn).
 add_definitions (${SEQAN_DEFINITIONS})
@@ -36,6 +38,4 @@ add_definitions (${SEQAN_DEFINITIONS})
 # Add CXX flags found by find_package (SeqAn).
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SEQAN_CXX_FLAGS}")
 
-# Add executable and link against SeqAn dependencies.
-add_executable (fasta_split src/fasta_split.cpp)
-target_link_libraries (fasta_split ${SEQAN_LIBRARIES})
+add_subdirectory(src)

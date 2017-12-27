@@ -4,7 +4,6 @@
 #include <cassert>
 #include <random>
 
-#define SEQAN_ENABLE_DEBUG 1
 
 #include <seqan/basic.h>
 #include <seqan/seq_io.h>
