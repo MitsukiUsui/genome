@@ -60,6 +60,13 @@ TEST(fasta_split, test_fill_N) {
     //WRITE ME
 }
 
+TEST(fasta_split, test_auto_fill) {
+    seqan::CharString seq1 = "NYgG";
+    seqan::Dna5String seq2 = seq1;
+    cout<<seq2<<endl;
+    EXPECT_TRUE(seq2 == "NNgG");
+}
+
 
 //TEST(fasta_split, test_fasta_split) {
 //    seqan::CharString seqFilepath = "/Users/mitsuki/sandbox/genome/preprocess/unittest/test.fasta";

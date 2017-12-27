@@ -4,6 +4,8 @@
 
 #include <seqan/arg_parse.h>
 #include <seqan/basic.h>
+#include "myseqan.h"
+
 #include "fasta_split.h"
 
 using std::cout;
