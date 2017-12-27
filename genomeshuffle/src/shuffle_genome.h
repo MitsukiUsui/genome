@@ -419,6 +419,7 @@ void output_shuffle_regions(std::vector<ShuffleRegion> const &shuffleRegions,
     std::ofstream ofs(outFilepath);
     if (!ofs) {
         std::cerr << "ERROR: Could not open " << outFilepath << std::endl;
+        std::exit(1);
     }
 
     for(ShuffleRegion const &shuffleRegion : shuffleRegions){
