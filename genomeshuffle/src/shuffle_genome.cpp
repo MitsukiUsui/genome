@@ -41,7 +41,9 @@ void set_parser(seqan::ArgumentParser &parser, int argc, char **argv) {/*{{{*/
     addArgument(parser, seqan::ArgParseArgument(
             seqan::ArgParseArgument::INTEGER, "shuffleMode2"));
     addOption(parser, seqan::ArgParseOption(
-            "d", "dryrun", "Do dryrun"));
+            "c", "code", "Genetic code (11: bacterial, 4:Mycoplasma)",
+            seqan::ArgParseArgument::INTEGER, "INT"));
+    seqan::setDefaultValue(parser, "code", "11");
 
     seqan::ArgumentParser::ParseResult res = seqan::parse(parser, argc, argv);
     if (res != seqan::ArgumentParser::PARSE_OK) {
@@ -68,7 +70,9 @@ int main(int argc, char **argv) {
     int shuffleMode[2] = {};
     seqan::getArgumentValue(shuffleMode[0], parser, 4);
     seqan::getArgumentValue(shuffleMode[1], parser, 5);
-    bool dryrun = seqan::isSet(parser, "dryrun");
+    int geneticCodeId;
+    seqan::getOptionValue(geneticCodeId, parser, "code");
+
 
     //configuration
     cout << "DONE: read configuration:" << endl;
@@ -77,9 +81,7 @@ int main(int argc, char **argv) {
     cout << "\tsimFilepath: " << simFilepath << endl;
     cout << "\tbedFilepath: " << bedFilepath << endl;
     cout << "\tshuffle mode: " << shuffleMode[0] << ", " << shuffleMode[1] << endl;
-    if (dryrun) {
-        cout << "\texecution: DRYRUN" << endl;
-    }
+    cout << "\tgenetic code: " << geneticCodeId << endl;
 
     //------------------------------------------------------------
     //read fasta
@@ -103,7 +105,7 @@ int main(int argc, char **argv) {
     //------------------------------------------------------------
     //update GeneticCode with gffs
     //------------------------------------------------------------
-    GeneticCode geneticCode(11);
+    GeneticCode geneticCode(geneticCodeId);
     std::vector< std::vector<MyCDS> > myCDS_vecvec;
 
     get_myCDS_vecvec(myCDS_vecvec, gffs, seqs, seqIds, geneticCode);
