@@ -15,7 +15,8 @@ def main(dbFilepath):
         if os.path.isfile(simFilepath) and os.path.isfile(bedFilepath):
             pass
         else:
-            print("ERROR: {} not finished".format(taxid))
+#            print("ERROR: {} not finished".format(taxid))
+            print(taxid)
     #dc.mark_as_done(taxid_lst, "shuffle")
     #print("DONE: mark {} taxids as done".format(len(taxid_lst)))
 

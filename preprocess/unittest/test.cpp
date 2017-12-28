@@ -13,7 +13,7 @@ using std::cerr;
 using std::endl;
 
 TEST(myseqan, test_read_fasta) {
-    seqan::CharString seqFilepath = "/Users/mitsuki/sandbox/genome/preprocess/unittest/test.fasta";
+    seqan::CharString seqFilepath = "../unittest/test.fasta";
     seqan::StringSet<seqan::CharString> ids;
     seqan::StringSet<seqan::IupacString> seqs;
     read_fasta(ids, seqs, seqFilepath);
