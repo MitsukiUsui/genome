@@ -82,37 +82,6 @@ class MyCDS {
     int label;
     int phase = -1; //defined only if this CDS is typical
 
-    int classify(seqan::DnaString const &seq,
-                 GeneticCode const &geneticCode) {
-        if (gff.endPos > seqan::length(seq)) {
-            return 1;
-        }
-
-        int length = gff.endPos - gff.beginPos;
-        if (length < 6 | (length % 3) != 0) {
-            return 2;
-        }
-
-        seqan::DnaString subSeq = seqan::infix(seq, gff.beginPos, gff.endPos); //create new object in order to use Infix.
-
-        if (gff.strand == '-') {
-            seqan::reverseComplement(subSeq);
-        }
-
-        int aaLength = length / 3;
-        for (int i = 0; i < aaLength - 1; i++) {
-            seqan::Infix<seqan::DnaString>::Type codon = seqan::infix(subSeq, 3 * i, 3 * (i + 1));
-            if (geneticCode.is_stop_codon(codon))
-                return 4;
-        }
-
-        seqan::Infix<seqan::DnaString>::Type codon = seqan::infix(subSeq, 3 * (aaLength - 1), 3 * aaLength);
-        if (!geneticCode.is_stop_codon(codon)) {
-            return 5;
-        }
-        return 0;
-    }
-
 public:
 
     MyCDS() {}
@@ -121,7 +90,9 @@ public:
           seqan::DnaString const &seq,
           GeneticCode const &geneticCode) {
         this->gff = gff;
-        this->label = classify(seq, geneticCode);
+        int tagIdx = seqan::length(gff.tagNames) - 1;
+        assert (gff.tagNames[tagIdx] == "cds_label"); // assume that cds_label is the last element
+        this->label = std::atoi(seqan::toCString(gff.tagValues[tagIdx]));
         if (is_typical()) {
             this->phase = get_start() % 3;
         }

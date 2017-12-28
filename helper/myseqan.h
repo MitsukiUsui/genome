@@ -59,7 +59,7 @@ void write_fasta(Tids const & ids, TSeqs const & seqs, TFilepath const & filepat
 template <typename TFilepath>//*** adopt to template (String or StringSet)
 void read_gff(seqan::String<seqan::GffRecord> & records,  TFilepath const & filepath){/*{{{*/
 	seqan::GffFileIn gffIn;
-	if(!seqan::open(gffIn,toCString(filepath))){
+	if(!seqan::open(gffIn,seqan::toCString(filepath))){
 		std::cerr<<"ERROR: Could not open "<<filepath<<std::endl;
 		std::exit(1);
 	}
@@ -86,7 +86,7 @@ void read_gff(seqan::String<seqan::GffRecord> & records,  TFilepath const & file
 template <typename TFilepath>//*** adopt to template 
 void write_gff(seqan::String<seqan::GffRecord> & records,  TFilepath const & filepath){/*{{{*/
 	seqan::GffFileOut gffOut;
-	if(!seqan::open(gffOut,toCString(filepath))){
+	if(!seqan::open(gffOut,seqan::toCString(filepath))){
 		std::cerr<<"ERROR: Could not open "<<filepath<<std::endl;
 		std::exit(1);
 	}
