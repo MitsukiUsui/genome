@@ -18,7 +18,7 @@ using std::cerr;
 using std::endl;
 
 int classify_cds(seqan::GffRecord const &gff,
-                 seqan::Dna5String const &seq,
+                 seqan::IupacString const &seq,
                  GeneticCode const &geneticCode) {
 
     // 0...typical
@@ -57,7 +57,7 @@ int classify_cds(seqan::GffRecord const &gff,
 }
 
 void update_gff(seqan::String<seqan::GffRecord> &gffs,
-               seqan::StringSet<seqan::Dna5String> const &seqs,
+               seqan::StringSet<seqan::IupacString> const &seqs,
                seqan::String<seqan::CharString> const &seqIds,
                GeneticCode const geneticCode) {
 
@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
     //read fasta
     //------------------------------------------------------------
     seqan::String<seqan::CharString> seqIds;
-    seqan::StringSet<seqan::Dna5String> seqs;
+    seqan::StringSet<seqan::IupacString> seqs;
     read_fasta(seqIds, seqs, seqFilepath);
 
     for (seqan::CharString  &seqId : seqIds) {
