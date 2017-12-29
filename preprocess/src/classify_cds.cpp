@@ -18,7 +18,7 @@ using std::cerr;
 using std::endl;
 
 int classify_cds(seqan::GffRecord const &gff,
-                 seqan::DnaString const &seq,
+                 seqan::Dna5String const &seq,
                  GeneticCode const &geneticCode) {
 
     // 0...typical
@@ -36,7 +36,7 @@ int classify_cds(seqan::GffRecord const &gff,
         return 2;
     }
 
-    seqan::DnaString subSeq = seqan::infix(seq, gff.beginPos, gff.endPos); //create new object in order to use Infix.
+    seqan::Dna5String subSeq = seqan::infix(seq, gff.beginPos, gff.endPos); //create new object in order to use Infix.
 
     if (gff.strand == '-') {
         seqan::reverseComplement(subSeq);
@@ -44,12 +44,12 @@ int classify_cds(seqan::GffRecord const &gff,
 
     int aaLength = length / 3;
     for (int i = 0; i < aaLength - 1; i++) {
-        seqan::Infix<seqan::DnaString>::Type codon = seqan::infix(subSeq, 3 * i, 3 * (i + 1));
+        seqan::Infix<seqan::Dna5String>::Type codon = seqan::infix(subSeq, 3 * i, 3 * (i + 1));
         if (geneticCode.is_stop_codon(codon))
             return 3;
     }
 
-    seqan::Infix<seqan::DnaString>::Type codon = seqan::infix(subSeq, 3 * (aaLength - 1), 3 * aaLength);
+    seqan::Infix<seqan::Dna5String>::Type codon = seqan::infix(subSeq, 3 * (aaLength - 1), 3 * aaLength);
     if (!geneticCode.is_stop_codon(codon)) {
         return 4;
     }
@@ -57,7 +57,7 @@ int classify_cds(seqan::GffRecord const &gff,
 }
 
 void update_gff(seqan::String<seqan::GffRecord> &gffs,
-               seqan::StringSet<seqan::DnaString> const &seqs,
+               seqan::StringSet<seqan::Dna5String> const &seqs,
                seqan::String<seqan::CharString> const &seqIds,
                GeneticCode const geneticCode) {
 
@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
     //read fasta
     //------------------------------------------------------------
     seqan::String<seqan::CharString> seqIds;
-    seqan::StringSet<seqan::DnaString> seqs;
+    seqan::StringSet<seqan::Dna5String> seqs;
     read_fasta(seqIds, seqs, seqFilepath);
 
     for (seqan::CharString  &seqId : seqIds) {
