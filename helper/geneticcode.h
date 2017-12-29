@@ -261,33 +261,35 @@ void GeneticCode::update_freq() {/*{{{*/
 
 template<typename TSeq>
 void GeneticCode::synonymous_sub(TSeq &codon, std::mt19937 &mt) const {/*{{{*/
-    assert (!is_stop_codon(codon));
+    assert (!is_stop_codon(codon)); // assuming typical cds, no longer needed ??
 
     int codonIdOld = codon_encode(codon);
-    int aaId = codonToAa[codonIdOld];
+    if (codonIdOld != -1) {
+        int aaId = codonToAa[codonIdOld];
 
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
-    double d = dist(mt);
-    double cumSum = 0;
-    //calc codonIdNew
-    int codonIdNew = -1;
-    for (int i = aaIndex[aaId]; i < aaIndex[aaId + 1]; i++) {
-        int codonId = aaToCodon[i];
-        cumSum += codonFreq[codonId];
-        if (cumSum >= d) {
-            codonIdNew = codonId;
-            break;
+        std::uniform_real_distribution<double> dist(0.0, 1.0);
+        double d = dist(mt);
+        double cumSum = 0;
+        //calc codonIdNew
+        int codonIdNew = -1;
+        for (int i = aaIndex[aaId]; i < aaIndex[aaId + 1]; i++) {
+            int codonId = aaToCodon[i];
+            cumSum += codonFreq[codonId];
+            if (cumSum >= d) {
+                codonIdNew = codonId;
+                break;
+            }
         }
-    }
 
-    if (codonIdNew == -1){
-        std::cerr<<"WARN: no frequency is defined."<<std::endl;
-        codonIdNew = aaToCodon[aaIndex[aaId]];
-    }
+        if (codonIdNew == -1){
+            std::cerr<<"WARN: no frequency is defined."<<std::endl;
+            codonIdNew = aaToCodon[aaIndex[aaId]]; //arbitrarily set the first codon which code the aaId
+        }
 
-    seqan::DnaString codonNew = codon_decode(codonIdNew);
-    for (int i = 0; i < 3; i++) {
-        codon[i] = codonNew[i];
+        seqan::DnaString codonNew = codon_decode(codonIdNew);
+        for (int i = 0; i < 3; i++) {
+            codon[i] = codonNew[i];
+        }
     }
 }/*}}}*/
 
@@ -306,12 +308,11 @@ seqan::String<seqan::AminoAcid> GeneticCode::translate(TSeq seq) const {/*{{{*/
 
 template<typename TSeq>
 bool GeneticCode::is_stop_codon(TSeq codon) const {/*{{{*/
-    int aaId = codonToAa[codon_encode(codon)];
-    if (aaId == 0) {
+    int codonId = codon_encode(codon);
+    if (codonId != -1 && codonToAa[codonId] == 0) {
         return true;
-    } else {
-        return false;
     }
+    return false;
 }/*}}}*/
 
 void GeneticCode::__show() const {/*{{{*/

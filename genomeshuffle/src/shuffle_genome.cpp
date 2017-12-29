@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
     //read fasta
     //------------------------------------------------------------
     seqan::String<seqan::CharString> seqIds;
-    seqan::StringSet<seqan::DnaString> seqs;
+    seqan::StringSet<seqan::Dna5String> seqs;
     read_fasta(seqIds, seqs, seqFilepath);
 
     for (seqan::CharString  &seqId : seqIds) {
@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
     GeneticCode geneticCode(geneticCodeId);
     std::vector< std::vector<MyCDS> > myCDS_vecvec;
 
-    get_myCDS_vecvec(myCDS_vecvec, gffs, seqs, seqIds, geneticCode);
+    get_myCDS_vecvec(myCDS_vecvec, gffs, seqIds);
     for (int seqIdx = 0; seqIdx < seqan::length(seqs); seqIdx++) {
         int cdsCount=0;
         int typicalCount=0;
@@ -123,12 +123,18 @@ int main(int argc, char **argv) {
     update_genetic_code(geneticCode, myCDS_vecvec, seqs);
     geneticCode.__show_freq(true);
 
+    //------------------------------------------------------------
+    //define shuffle regions
+    //------------------------------------------------------------
     std::vector<ShuffleRegion> shuffleRegions;
     get_shuffle_region(shuffleRegions, shuffleMode, seqs, myCDS_vecvec);
     cout << "DONE: find " << shuffleRegions.size() << " shuffle regions" << endl;
     output_shuffle_regions(shuffleRegions, seqIds, seqan::toCString(bedFilepath));
     cout << "DONE: output shuffle regions to " << bedFilepath << endl;
 
+    //------------------------------------------------------------
+    //create and output simulated genomes
+    //------------------------------------------------------------
     shuffle_genome(seqs, shuffleRegions, geneticCode);
     write_fasta(seqIds, seqs, simFilepath);
     cout << "DONE: output simulated genome to " << simFilepath << endl;

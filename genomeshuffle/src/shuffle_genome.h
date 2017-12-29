@@ -30,7 +30,7 @@ void shuffle_base(TSeq &seq, std::mt19937 &mt) {
     std::iota(v.begin(), v.end(), 0);
     std::shuffle(v.begin(), v.end(), mt);
 
-    seqan::DnaString tmp;//TBI: adjust to template
+    seqan::DnaString tmp;//TODO: adjust to template, is it ok to use arbitrary type for seqan::replace??
     seqan::resize(tmp, bpLength);
     for (unsigned i = 0; i < bpLength; i++) {
         tmp[i] = seq[v[i]];
@@ -59,13 +59,13 @@ void shuffle_codon(TSeq &seq, std::mt19937 &mt) {
     return;
 }
 
-void shuffle_synonymous(seqan::DnaString &seq, GeneticCode const &gc, std::mt19937 &mt) {
+void shuffle_synonymous(seqan::Dna5String &seq, GeneticCode const &gc, std::mt19937 &mt) {
     unsigned bpLength = seqan::length(seq);
     assert(bpLength % 3 == 0);
     unsigned aaLength = bpLength / 3;
 
     for (unsigned i = 0; i < aaLength; i++) {
-        seqan::Infix<seqan::DnaString>::Type codon = seqan::infix(seq, 3 * i, 3 * (i + 1));
+        seqan::Infix<seqan::Dna5String>::Type codon = seqan::infix(seq, 3 * i, 3 * (i + 1));
         gc.synonymous_sub(codon, mt);
     }
     return;
@@ -86,9 +86,7 @@ public:
 
     MyCDS() {}
 
-    MyCDS(seqan::GffRecord const &gff,
-          seqan::DnaString const &seq,
-          GeneticCode const &geneticCode) {
+    MyCDS(seqan::GffRecord const &gff) {
         this->gff = gff;
         int tagIdx = seqan::length(gff.tagNames) - 1;
         assert (gff.tagNames[tagIdx] == "cds_label"); // assume that cds_label is the last element
@@ -121,11 +119,9 @@ public:
 
 void get_myCDS_vecvec(std::vector< std::vector<MyCDS> > &myCDS_vecvec,
                       seqan::String<seqan::GffRecord> const &gffs,
-                      seqan::StringSet<seqan::DnaString> const &seqs,
-                      seqan::String<seqan::CharString> const &seqIds,
-                      GeneticCode const geneticCode) {
+                      seqan::String<seqan::CharString> const &seqIds) {
 
-    int numSeqs = seqan::length(seqs);
+    int numSeqs = seqan::length(seqIds);
     for (int seqIdx = 0; seqIdx < numSeqs; seqIdx++) {
         std::vector<MyCDS> myCDS_vec;
         myCDS_vecvec.push_back(myCDS_vec);
@@ -144,7 +140,7 @@ void get_myCDS_vecvec(std::vector< std::vector<MyCDS> > &myCDS_vecvec,
             }
 
             if (seqIdx != -1) {
-                MyCDS myCDS = MyCDS(gff, seqs[seqIdx], geneticCode);
+                MyCDS myCDS = MyCDS(gff);
                 myCDS_vecvec[seqIdx].push_back(myCDS);
             }
         }
@@ -252,15 +248,15 @@ public:
 
 void update_genetic_code(GeneticCode &geneticCode,
                          std::vector<std::vector<MyCDS> > const myCDS_vecvec,
-                         seqan::StringSet<seqan::DnaString> const &seqs) {
+                         seqan::StringSet<seqan::Dna5String> const &seqs) {
 
     int numSeqs = seqan::length(seqs);
     for (int seqIdx = 0; seqIdx < numSeqs; seqIdx++) {
-        seqan::DnaString const seq = seqs[seqIdx];
+        seqan::Dna5String const &seq = seqs[seqIdx];
 
         for (MyCDS const myCDS : myCDS_vecvec[seqIdx]) {
             if (myCDS.is_typical()) {
-                seqan::DnaString sub = seqan::infix(seq, myCDS.get_start() + 3, myCDS.get_end() - 3);
+                seqan::DnaString sub = seqan::infix(seq, myCDS.get_start() + 3, myCDS.get_end() - 3); // need to copy because of reverseComplement
                 if (!myCDS.is_forward()) {
                     seqan::reverseComplement(sub);
                 }
@@ -300,7 +296,7 @@ struct StateSwitch {
 
 void get_shuffle_region(std::vector<ShuffleRegion> &shuffleRegions,
                         int *shuffleMode,
-                        seqan::StringSet<seqan::DnaString> const &seqs, //only needed for their length. Passing seqs is a little too much.
+                        seqan::StringSet<seqan::Dna5String> const &seqs, //only needed for their length. Passing seqs is a little too much.
                         std::vector<std::vector<MyCDS> > const myCDS_vecvec) {
 
 
@@ -405,11 +401,11 @@ void output_shuffle_regions(std::vector<ShuffleRegion> const &shuffleRegions,
     return;
 }
 
-void shuffle_region(seqan::DnaString & seq,
+void shuffle_region(seqan::Dna5String & seq,
                     ShuffleRegion const shuffleRegion,
                     std::mt19937 & mt,
                     GeneticCode const & geneticCode) {
-    seqan::DnaString subSeq = seqan::infix(seq, shuffleRegion.start, shuffleRegion.end);
+    seqan::Dna5String subSeq = seqan::infix(seq, shuffleRegion.start, shuffleRegion.end);
     if(!shuffleRegion.isForward){
         seqan::reverseComplement(subSeq);
     }
@@ -433,7 +429,7 @@ void shuffle_region(seqan::DnaString & seq,
     return;
 }
 
-void shuffle_genome(seqan::StringSet<seqan::DnaString> &seqs,
+void shuffle_genome(seqan::StringSet<seqan::Dna5String> &seqs,
                     std::vector<ShuffleRegion> const &shuffleRegions,
                     GeneticCode const &geneticCode) {
 

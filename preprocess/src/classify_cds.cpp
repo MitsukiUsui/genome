@@ -20,6 +20,13 @@ using std::endl;
 int classify_cds(seqan::GffRecord const &gff,
                  seqan::DnaString const &seq,
                  GeneticCode const &geneticCode) {
+
+    // 0...typical
+    // 1...spanning the border of circular genome
+    // 2...length too short or not the multiple of 3
+    // 3...stop codon is inserted in the middle
+    // 4...the last codon is not a stop codon
+
     if (gff.endPos > seqan::length(seq)) {
         return 1;
     }
@@ -39,12 +46,12 @@ int classify_cds(seqan::GffRecord const &gff,
     for (int i = 0; i < aaLength - 1; i++) {
         seqan::Infix<seqan::DnaString>::Type codon = seqan::infix(subSeq, 3 * i, 3 * (i + 1));
         if (geneticCode.is_stop_codon(codon))
-            return 4;
+            return 3;
     }
 
     seqan::Infix<seqan::DnaString>::Type codon = seqan::infix(subSeq, 3 * (aaLength - 1), 3 * aaLength);
     if (!geneticCode.is_stop_codon(codon)) {
-        return 5;
+        return 4;
     }
     return 0;
 }
