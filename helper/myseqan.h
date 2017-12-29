@@ -92,9 +92,13 @@ void write_gff(seqan::String<seqan::GffRecord> & records,  TFilepath const & fil
 	}
 
 	for(unsigned i=0;i<seqan::length(records);i++){
-		seqan::writeRecord(gffOut,records[i]);
+        try{
+			seqan::writeRecord(gffOut,records[i]);
+        }catch(seqan::Exception const & e){
+			std::cerr<<"ERROR(write_gff): "<<e.what()<<std::endl;
+			continue;
+		}
 	}
-
 }/*}}}*/
 
 
