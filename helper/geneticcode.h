@@ -157,7 +157,7 @@ inline int GeneticCode::codon_encode(TSeq const &codon) const {/*{{{*/
                 codonId += 3 * base;
                 break;
             default:
-                std::cerr << "ERROR: Unusual nucleotide " << codon[2 - i] << " is included." << std::endl;
+                std::cerr << "WARN(codon_encode): Unusual nucleotide " << codon[2 - i] << " is included." << std::endl;
                 return -1;
         }
         base *= 4;
