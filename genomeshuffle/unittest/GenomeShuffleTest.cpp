@@ -63,46 +63,32 @@ TEST(seqan, test_length) {
 seqan::GffRecord create_gffRecord(seqan::CharString ref,
                                   int beginPos,
                                   int endPos,
-                                  char strand) {
+                                  char strand,
+                                  int cdsLabel) {
     seqan::GffRecord gff;
     gff.type = "CDS";
     gff.ref=ref;
     gff.beginPos=beginPos;
     gff.endPos=endPos;
     gff.strand=strand;
+    seqan::appendValue(gff.tagNames, "cds_label");
+    seqan::appendValue(gff.tagValues, std::to_string(cdsLabel));
     return gff;
 }
 
-TEST(genome_shuffle, test_classify) {
-    seqan::GffRecord gff;
-    seqan::DnaString seq;
-    GeneticCode geneticCode = GeneticCode(11);
-    MyCDS myCDS;
-
-    gff = create_gffRecord("seq1", 0, 6, '+');
-    seq = "ATGTAA";
-    myCDS = MyCDS(gff, seq, geneticCode);
-    ASSERT_EQ(myCDS.label, 0);
-
-    gff = create_gffRecord("seq1", 0, 6, '-');
-    seqan::reverseComplement(seq);
-    myCDS = MyCDS(gff, seq, geneticCode);
-    ASSERT_EQ(myCDS.label, 0);
-
-
-    gff = create_gffRecord("seq1", 0, 6, '-');
-    seq = "AAAAAA";
-    myCDS = MyCDS(gff, seq, geneticCode);
-    ASSERT_EQ(myCDS.label, 5);
+TEST(genome_shuffle, test_MyCDS) {
+    seqan::GffRecord gff = create_gffRecord("seq1", 0, 6, '+', 0);
+    MyCDS myCDS = MyCDS(gff);
+    ASSERT_TRUE(myCDS.is_typical());
 }
 
 TEST(genome_shuffle, test_get_shuffle_region) {
     seqan::String<seqan::GffRecord> gffs;
-    seqan::appendValue(gffs, create_gffRecord("seq1", 3, 12, '+'));
-    seqan::appendValue(gffs, create_gffRecord("seq2", 0, 12, '+'));
-    seqan::appendValue(gffs, create_gffRecord("seq2", 7, 19, '+'));
-    seqan::appendValue(gffs, create_gffRecord("seq3", 0, 24, '+'));
-    seqan::appendValue(gffs, create_gffRecord("seq3", 8, 17, '+'));
+    seqan::appendValue(gffs, create_gffRecord("seq1", 3, 12, '+', 0));
+    seqan::appendValue(gffs, create_gffRecord("seq2", 0, 12, '+', 0));
+    seqan::appendValue(gffs, create_gffRecord("seq2", 7, 19, '+', 0));
+    seqan::appendValue(gffs, create_gffRecord("seq3", 0, 24, '+', 0));
+    seqan::appendValue(gffs, create_gffRecord("seq3", 8, 17, '+', 0));
 
     seqan::String<seqan::CharString> seqIds;
     seqan::appendValue(seqIds, "seq1");
@@ -115,7 +101,7 @@ TEST(genome_shuffle, test_get_shuffle_region) {
 
     GeneticCode geneticCode = GeneticCode(11);
     std::vector< std::vector<MyCDS> > myCDS_vecvec;
-    get_myCDS_vecvec(myCDS_vecvec, gffs, seqs, seqIds, geneticCode);
+    get_myCDS_vecvec(myCDS_vecvec, gffs, seqIds);
 
     int shuffleMode[2] = {1, 3};
     std::vector<ShuffleRegion> shuffleRegions;
@@ -163,7 +149,7 @@ TEST(genome_shuffle, test_shuffle_base){
 
     // TODO: test code yet to be written
 
-    seqan::DnaString seq = "AAATTTGGGCCC";
+    seqan::Dna5String seq = "AAATTTGGGCCC";
     std::random_device rd;
     std::mt19937 mt(rd());
 
@@ -176,7 +162,7 @@ TEST(genome_shuffle, test_shuffle_codon){
 
     // TODO: test code yet to be written
 
-    seqan::DnaString seq = "AAATTTGGGCCC";
+    seqan::Dna5String seq = "AAATTTGGGCCC";
     std::random_device rd;
     std::mt19937 mt(rd());
 
@@ -189,7 +175,7 @@ TEST(genome_shuffle, test_shuffle_synonymous){
 
     // TODO: test code yet to be written
 
-    seqan::DnaString seq = "TCTTCTTCCTCA";
+    seqan::Dna5String seq = "TCTTCTTCCTCA";
     GeneticCode geneticCode = GeneticCode(11);
     geneticCode.update_count(seq);
     std::random_device rd;
